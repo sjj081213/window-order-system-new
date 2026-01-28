@@ -1,0 +1,1 @@
+minio访问地址：http://localhost:9001/browser/s3static
