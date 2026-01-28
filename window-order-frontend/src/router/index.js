@@ -11,6 +11,7 @@ import AfterSalesList from '../views/AfterSalesList.vue'
 import CustomerList from '../views/CustomerList.vue'
 import RemeasureTaskList from '../views/RemeasureTaskList.vue'
 import MainLayout from '../layout/MainLayout.vue'
+import PaymentDetail from '../views/PaymentDetail.vue'
 
 const routes = [
   {
@@ -39,6 +40,12 @@ const routes = [
         path: 'order/detail/:id',
         name: 'OrderDetail',
         component: OrderDetail,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'order/payment/:id',
+        name: 'PaymentDetail',
+        component: PaymentDetail,
         meta: { requiresAuth: true }
       },
       {

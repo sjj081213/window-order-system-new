@@ -141,25 +141,24 @@
         
         <div class="mt-4">
             <div class="sub-title">收款记录</div>
-            <el-table :data="paymentList" border stripe size="small">
-                <el-table-column prop="payTime" label="时间" width="160" />
-                <el-table-column prop="amount" label="金额" width="120">
-                    <template #default="scope">¥ {{ scope.row.amount }}</template>
+            <el-table :data="paymentList" border stripe size="small" class="receipt-table">
+                <el-table-column prop="payTime" label="时间" width="180" header-align="left" />
+                <el-table-column prop="amount" label="金额" width="140" align="right" header-align="right">
+                    <template #default="scope"><span class="amount">¥ {{ scope.row.amount }}</span></template>
                 </el-table-column>
-                <el-table-column prop="payMethod" label="支付方式" width="120" />
-                <el-table-column label="附件" width="220">
+                <el-table-column prop="payMethod" label="支付方式" width="140" header-align="left">
                   <template #default="scope">
-                    <div v-if="getAttachments(scope.row).length > 0" class="attachment-list">
-                      <a v-for="url in getAttachments(scope.row)" :key="url" :href="url" target="_blank" class="attachment-item">
-                        <el-icon><Link /></el-icon>
-                        <span>查看</span>
-                      </a>
-                    </div>
-                    <span v-else class="text-gray">-</span>
+                    <el-tag :type="getPayMethodTagType(scope.row.payMethod)" class="method-tag">{{ scope.row.payMethod }}</el-tag>
                   </template>
                 </el-table-column>
-                <el-table-column prop="remark" label="备注" />
-                <el-table-column prop="createByName" label="操作人" width="100" />
+                <el-table-column prop="createByName" label="添加人" width="120" header-align="left" />
+                <el-table-column label="操作" width="160" fixed="right" header-align="center" align="center">
+                  <template #default="scope">
+                    <el-button type="primary" link @click="openPaymentDetail(scope.row)">详情</el-button>
+                    <el-divider direction="vertical" />
+                    <el-button type="primary" link @click="openPaymentPage(scope.row)">页面查看</el-button>
+                  </template>
+                </el-table-column>
             </el-table>
         </div>
       </el-card>
@@ -205,6 +204,33 @@
                 <el-button type="primary" @click="submitPayment">确定</el-button>
             </span>
         </template>
+    </el-dialog>
+
+    <el-dialog v-model="paymentDetailVisible" title="收款详情" width="800px">
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="时间" :span="2">{{ selectedPayment?.payTime }}</el-descriptions-item>
+        <el-descriptions-item label="金额">
+          <span class="amount">¥ {{ selectedPayment?.amount }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="支付方式">
+          <el-tag :type="getPayMethodTagType(selectedPayment?.payMethod)">{{ selectedPayment?.payMethod }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="备注" :span="2">{{ selectedPayment?.remark || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="添加人">{{ selectedPayment?.createByName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="附件" :span="2">
+          <div v-if="getAttachments(selectedPayment).length > 0" class="attachment-grid scrollable">
+            <a v-for="url in getAttachments(selectedPayment)" :key="url" :href="url" target="_blank" class="attachment-card">
+              <el-icon><Link /></el-icon>
+              <span class="file-name">{{ fileNameFromUrl(url) }}</span>
+            </a>
+          </div>
+          <span v-else class="text-gray">-</span>
+        </el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button @click="paymentDetailVisible = false">关闭</el-button>
+        <el-button type="primary" @click="openPaymentPage(selectedPayment)">在新页面查看</el-button>
+      </template>
     </el-dialog>
 
     <!-- After Sales Dialog -->
@@ -285,6 +311,8 @@ const loading = ref(false)
 const order = ref({})
 const paymentList = ref([])
 const paymentDialogVisible = ref(false)
+const paymentDetailVisible = ref(false)
+const selectedPayment = ref(null)
 const afterSalesDialogVisible = ref(false)
 const editDialogVisible = ref(false)
 const paymentForm = ref({
@@ -382,16 +410,12 @@ const submitPayment = async () => {
         return
     }
     try {
-        let remark = paymentForm.value.remark || ''
-        if (paymentForm.value.attachments && paymentForm.value.attachments.length > 0) {
-            const urls = paymentForm.value.attachments.join(',')
-            remark = `${remark ? remark + ' ' : ''}[附件:${urls}]`
-        }
         const res = await createPayment({
             orderId: order.value.id,
             amount: paymentForm.value.amount,
             payMethod: paymentForm.value.payMethod,
-            remark
+            remark: paymentForm.value.remark || '',
+            attachments: paymentForm.value.attachments || []
         })
         if (res.code === 200) {
             ElMessage.success('收款成功')
@@ -402,6 +426,16 @@ const submitPayment = async () => {
             ElMessage.error(res.message)
         }
     } catch(e) {}
+}
+
+const openPaymentDetail = (row) => {
+  selectedPayment.value = row
+  paymentDetailVisible.value = true
+}
+
+const openPaymentPage = (row) => {
+  if (!row || !order.value?.id) return
+  router.push({ name: 'PaymentDetail', params: { id: row.id }, query: { orderId: order.value.id } })
 }
 
 const handleUploadSuccess = (response, file, fileList) => {
@@ -438,6 +472,18 @@ const getAttachments = (row) => {
   if (Array.isArray(row.attachmentList)) return row.attachmentList
   if (typeof row.attachments === 'string') return parseAttachments(row.attachments)
   return []
+}
+
+const fileNameFromUrl = (url) => {
+  try {
+    const u = new URL(url, window.location.origin)
+    const pathname = u.pathname || url
+    const name = pathname.split('/').pop() || url
+    return decodeURIComponent(name)
+  } catch {
+    const parts = url.split('?')[0].split('/')
+    return decodeURIComponent(parts.pop() || url)
+  }
 }
 
 const submitAfterSales = async () => {
@@ -501,6 +547,16 @@ const getPaymentStatusLabel = (status) => {
     'PAID': '已付清'
   }
   return map[status] || '未支付'
+}
+
+const getPayMethodTagType = (method) => {
+  const map = {
+    '微信': 'success',
+    '支付宝': 'primary',
+    '现金': 'warning',
+    '银行转账': 'info'
+  }
+  return map[method] || 'info'
 }
 
 const getProgressType = (status) => {
@@ -645,6 +701,68 @@ const getProductionStep = (status) => {
   text-decoration: none;
 }
 
+.attachment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+.attachment-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  color: #409EFF;
+  text-decoration: none;
+  background: #fff;
+}
+.file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.scrollable {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+:deep(.receipt-table) {
+  border-radius: 8px;
+  overflow: hidden;
+}
+:deep(.receipt-table .el-table__header-wrapper th) {
+  background-color: #f7f9fc;
+  color: #606266;
+  font-weight: 600;
+}
+:deep(.receipt-table .el-table__body .cell) {
+  padding: 8px 12px;
+}
+:deep(.receipt-table.el-table--striped .el-table__body tr.el-table__row--striped td) {
+  background-color: #fcfdff;
+}
+:deep(.receipt-table .el-table__body tr:hover td) {
+  background-color: #f9fbff;
+}
+.sub-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 10px;
+  padding-left: 10px;
+  border-left: 4px solid #409EFF;
+}
+.amount {
+  color: #67c23a;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.method-tag {
+  border-radius: 12px;
+}
 :deep(.highlight-label-blue) {
     background-color: #ecf5ff !important;
     color: #409eff;
