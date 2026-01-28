@@ -249,7 +249,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="订单价格">
-              <el-input-number v-model="form.price" :precision="2" :step="100" :min="0" controls-position="right" style="width: 100%">
+              <el-input-number v-model="form.price" :precision="2" :step="1" :min="0" controls-position="right" style="width: 100%">
                  <template #prefix>￥</template>
               </el-input-number>
             </el-form-item>
@@ -285,10 +285,10 @@
         </el-row>
         <el-row :gutter="20" v-if="dialogType === 'edit'">
           <el-col :span="24">
-            <el-form-item label="生产进度">
+            <el-form-item label="制作进度">
               <el-select v-model="form.productionProgress" style="width: 100%" :disabled="form.status === 'DRAFT'">
                 <el-option label="等待中" value="WAITING" />
-                <el-option label="生产中" value="PRODUCING" />
+                <el-option label="制作中" value="PRODUCING" />
                 <el-option label="已完成" value="FINISHED" />
               </el-select>
             </el-form-item>
@@ -788,7 +788,7 @@ const getProgressLabel = (status) => {
     'WAITING': '等待中',
     'SCHEDULED': '已排期',
     'INSTALLING': '安装中',
-    'PRODUCING': '生产中',
+    'PRODUCING': '制作中',
     'FINISHED': '已完成'
   }
   return map[status] || status

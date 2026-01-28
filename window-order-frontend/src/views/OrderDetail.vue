@@ -20,8 +20,16 @@
             <span>基本信息</span>
             <div class="header-actions">
               <el-button type="primary" size="small" @click="openEdit">编辑订单</el-button>
-              <el-button type="warning" size="small" @click="handleAfterSales" v-if="order.status !== 'DRAFT'">申请售后</el-button>
-              <el-tag :type="getProgressType(order.installProgress)" effect="dark" class="status-tag">
+              <el-button
+                type="warning"
+                size="small"
+                @click="handleAfterSales"
+                v-if="order.productionProgress === 'FINISHED' && order.installProgress === 'FINISHED'"
+              >申请售后</el-button>
+              <el-tag :type="order.status === 'DRAFT' ? 'info' : 'success'" class="status-tag">
+                {{ order.status === 'DRAFT' ? '草稿' : '已提交' }}
+              </el-tag>
+              <el-tag v-if="order.status !== 'DRAFT'" :type="getProgressType(order.installProgress)" effect="dark" class="status-tag">
                 {{ getProgressLabel(order.installProgress) }}
               </el-tag>
             </div>
@@ -83,10 +91,10 @@
           </div>
         </template>
         <div class="progress-wrapper">
-          <div class="progress-label">生产进度</div>
+          <div class="progress-label">制作进度</div>
           <el-steps :active="getProductionStep(order.productionProgress)" finish-status="success" align-center>
             <el-step title="等待" :icon="Timer" />
-            <el-step title="生产" :icon="Tools" />
+            <el-step title="制作" :icon="Tools" />
             <el-step title="完成" :icon="CircleCheck" />
           </el-steps>
         </div>
@@ -109,7 +117,7 @@
         </el-descriptions>
       </el-card>
 
-      <el-card class="box-card mt-4" shadow="never">
+      <el-card class="box-card mt-4" shadow="never" v-if="order.status !== 'DRAFT'">
         <template #header>
           <div class="card-header">
             <span>财务信息</span>
@@ -151,7 +159,7 @@
     <el-dialog v-model="paymentDialogVisible" title="添加收款" width="400px">
         <el-form :model="paymentForm" label-width="80px">
             <el-form-item label="收款金额">
-                <el-input-number v-model="paymentForm.amount" :min="0" :precision="2" style="width: 100%" />
+                <el-input-number v-model="paymentForm.amount" :min="0" :precision="2" :step="1" style="width: 100%" />
             </el-form-item>
             <el-form-item label="支付方式">
                 <el-select v-model="paymentForm.payMethod" style="width: 100%">
@@ -198,10 +206,10 @@
             <el-radio label="SUBMITTED">正式提交</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="生产进度">
+        <el-form-item label="制作进度">
           <el-select v-model="editForm.productionProgress" style="width: 100%" :disabled="editForm.status === 'DRAFT'">
             <el-option label="等待中" value="WAITING" />
-            <el-option label="生产中" value="PRODUCING" />
+            <el-option label="制作中" value="PRODUCING" />
             <el-option label="已完成" value="FINISHED" />
           </el-select>
         </el-form-item>
@@ -436,7 +444,7 @@ const getProgressLabel = (status) => {
     'WAITING': '等待中',
     'SCHEDULED': '已排期',
     'INSTALLING': '安装中',
-    'PRODUCING': '生产中',
+    'PRODUCING': '制作中',
     'FINISHED': '已完成'
   }
   return map[status] || status
