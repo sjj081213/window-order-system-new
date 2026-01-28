@@ -1,0 +1,30 @@
+# 统一.gitignore配置 - 版本: 2025-07-10
+# 适用于所有Java Maven项目
+
+# Maven构建目录
+target/
+.mvn/
+.gradle
+
+# IDE配置目录 - 核心要求
+.cursor/
+.idea/
+.vscode/
+
+# IDE文件
+*.iml
+*.iws
+*.ipr
+
+# 日志文件
+*.log
+
+# 系统文件
+.DS_Store
+
+# 其他工具目录
+/.codebuddy/*
+/.trae/*
+
+# Git模块文件（根据项目需要）
+.gitmodules
