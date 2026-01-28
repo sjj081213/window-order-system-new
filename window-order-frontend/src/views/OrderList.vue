@@ -586,14 +586,14 @@ const handleCreate = () => {
     scheduledInstallDate: null,
     actualInstallEndDate: null,
     status: ORDER_STATUS.SUBMITTED,
-    salespersonId: currentUser.id,
+    salespersonId: userStore.currentUser.id,
     installerId: null
   })
   dialogVisible.value = true
 }
 
 const handleEdit = (row) => {
-  if (currentUser.role === 'SALES' && row.salespersonId !== currentUser.id) {
+  if (userStore.currentUser.role === 'SALES' && row.salespersonId !== userStore.currentUser.id) {
       ElMessage.warning('您只能修改自己的订单')
       return
   }
@@ -639,9 +639,9 @@ const handleDetail = (row) => {
 const handleDelete = (row) => {
   // Permission check logic
   let canDelete = false
-  if (currentUser.role === 'ADMIN') {
+  if (userStore.currentUser.role === 'ADMIN') {
       canDelete = true
-  } else if (currentUser.role === 'SALES' && row.salespersonId === currentUser.id) {
+  } else if (userStore.currentUser.role === 'SALES' && row.salespersonId === userStore.currentUser.id) {
       canDelete = true
   }
   
@@ -656,8 +656,8 @@ const handleDelete = (row) => {
     type: 'warning'
   }).then(async () => {
     const res = await deleteOrder(row.id, {
-        currentUserId: currentUser.id,
-        currentUserRole: currentUser.role
+        currentUserId: userStore.currentUser.id,
+        currentUserRole: userStore.currentUser.role
     })
     if (res.code === 200) {
       ElMessage.success('已删除')
