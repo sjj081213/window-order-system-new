@@ -28,6 +28,19 @@ public class FileController {
         String ext = "";
         if (original != null && original.contains(".")) {
             ext = original.substring(original.lastIndexOf("."));
+        } else {
+            String ct = file.getContentType();
+            if (ct != null) {
+                if (ct.startsWith("image/jpeg")) ext = ".jpg";
+                else if (ct.startsWith("image/png")) ext = ".png";
+                else if (ct.startsWith("image/gif")) ext = ".gif";
+                else if (ct.startsWith("application/pdf")) ext = ".pdf";
+                else if (ct.startsWith("application/vnd.ms-excel")) ext = ".xls";
+                else if (ct.startsWith("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) ext = ".xlsx";
+                else if (ct.startsWith("application/msword")) ext = ".doc";
+                else if (ct.startsWith("application/vnd.openxmlformats-officedocument.wordprocessingml.document")) ext = ".docx";
+                else ext = "";
+            }
         }
         String dateDir = LocalDate.now().toString();
         Path root = Paths.get(System.getProperty("user.dir")).resolve("uploads").resolve(dateDir);
@@ -48,7 +61,12 @@ public class FileController {
         byte[] bytes = Files.readAllBytes(file);
         String contentType = Files.probeContentType(file);
         if (!StringUtils.hasText(contentType)) {
-            contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+            String lower = filename.toLowerCase();
+            if (lower.endsWith(".png")) contentType = MediaType.IMAGE_PNG_VALUE;
+            else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) contentType = MediaType.IMAGE_JPEG_VALUE;
+            else if (lower.endsWith(".gif")) contentType = MediaType.IMAGE_GIF_VALUE;
+            else if (lower.endsWith(".pdf")) contentType = MediaType.APPLICATION_PDF_VALUE;
+            else contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
         }
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, contentType)

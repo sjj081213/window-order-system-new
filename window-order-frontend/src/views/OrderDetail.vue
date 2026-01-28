@@ -139,20 +139,20 @@
              </el-descriptions-item>
         </el-descriptions>
         
-        <div class="mt-4">
+        <div class="mt-4 edge-to-edge">
             <div class="sub-title">收款记录</div>
             <el-table :data="paymentList" border stripe size="small" class="receipt-table">
-                <el-table-column prop="payTime" label="时间" width="180" header-align="left" />
-                <el-table-column prop="amount" label="金额" width="140" align="right" header-align="right">
+                <el-table-column prop="payTime" label="时间" width="180" header-align="center" label-class-name="text-center" />
+                <el-table-column prop="amount" label="金额" width="140" align="right" header-align="center" label-class-name="text-center">
                     <template #default="scope"><span class="amount">¥ {{ scope.row.amount }}</span></template>
                 </el-table-column>
-                <el-table-column prop="payMethod" label="支付方式" width="140" header-align="left">
+                <el-table-column prop="payMethod" label="支付方式" width="140" header-align="center" label-class-name="text-center">
                   <template #default="scope">
                     <el-tag :type="getPayMethodTagType(scope.row.payMethod)" class="method-tag">{{ scope.row.payMethod }}</el-tag>
                   </template>
                 </el-table-column>
-                <el-table-column prop="createByName" label="添加人" width="120" header-align="left" />
-                <el-table-column label="操作" width="160" fixed="right" header-align="center" align="center">
+                <el-table-column prop="createByName" label="添加人" width="120" header-align="center" label-class-name="text-center" />
+                <el-table-column label="操作" width="160" fixed="right" header-align="center" align="center" label-class-name="text-center">
                   <template #default="scope">
                     <el-button type="primary" link @click="openPaymentDetail(scope.row)">详情</el-button>
                     <el-divider direction="vertical" />
@@ -729,6 +729,11 @@ const getProductionStep = (status) => {
   padding-right: 4px;
 }
 
+.edge-to-edge {
+  margin-left: -20px;
+  margin-right: -20px;
+}
+
 :deep(.receipt-table) {
   border-radius: 8px;
   overflow: hidden;
@@ -738,6 +743,10 @@ const getProductionStep = (status) => {
   color: #606266;
   font-weight: 600;
 }
+:deep(.receipt-table .el-table__header-wrapper th .cell) { text-align: center; }
+:deep(.receipt-table .el-table__header-wrapper th.text-left .cell) { text-align: left; }
+:deep(.receipt-table .el-table__header-wrapper th.text-right .cell) { text-align: right; }
+:deep(.receipt-table .el-table__header-wrapper th.text-center .cell) { text-align: center; }
 :deep(.receipt-table .el-table__body .cell) {
   padding: 8px 12px;
 }
