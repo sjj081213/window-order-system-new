@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,6 +16,7 @@ public class PaymentCreateReq {
     private String payMethod;
     private String remark;
     private LocalDateTime payTime;
+    private List<String> attachments;
     
     // Auth fields
     private Long currentUserId;

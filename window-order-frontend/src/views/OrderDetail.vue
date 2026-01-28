@@ -147,6 +147,17 @@
                     <template #default="scope">¥ {{ scope.row.amount }}</template>
                 </el-table-column>
                 <el-table-column prop="payMethod" label="支付方式" width="120" />
+                <el-table-column label="附件" width="220">
+                  <template #default="scope">
+                    <div v-if="getAttachments(scope.row).length > 0" class="attachment-list">
+                      <a v-for="url in getAttachments(scope.row)" :key="url" :href="url" target="_blank" class="attachment-item">
+                        <el-icon><Link /></el-icon>
+                        <span>查看</span>
+                      </a>
+                    </div>
+                    <span v-else class="text-gray">-</span>
+                  </template>
+                </el-table-column>
                 <el-table-column prop="remark" label="备注" />
                 <el-table-column prop="createByName" label="操作人" width="100" />
             </el-table>
@@ -168,6 +179,21 @@
                     <el-option label="现金" value="现金" />
                     <el-option label="银行转账" value="银行转账" />
                 </el-select>
+            </el-form-item>
+            <el-form-item label="付款凭证">
+                <el-upload
+                  action="/api/file/upload"
+                  :headers="uploadHeaders"
+                  :file-list="uploadFileList"
+                  :on-success="handleUploadSuccess"
+                  :on-remove="handleUploadRemove"
+                  multiple
+                  :limit="10"
+                  accept=".png,.jpg,.jpeg,.gif,.pdf,.doc,.docx,.xls,.xlsx"
+                  list-type="picture-card"
+                >
+                  <el-icon><Plus /></el-icon>
+                </el-upload>
             </el-form-item>
             <el-form-item label="备注">
                 <el-input v-model="paymentForm.remark" type="textarea" />
@@ -249,7 +275,7 @@ import { createPayment, listPayments } from '@/api/payment'
 import { createAfterSales } from '@/api/afterSales'
 import { updateOrder } from '@/api/order'
 import { ElMessage } from 'element-plus'
-import { Timer, Tools, CircleCheck, Calendar, Van, Money, Wallet } from '@element-plus/icons-vue'
+import { Timer, Tools, CircleCheck, Calendar, Van, Money, Wallet, Plus, Link } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
 
 const route = useRoute()
@@ -264,8 +290,13 @@ const editDialogVisible = ref(false)
 const paymentForm = ref({
     amount: 0,
     payMethod: '微信',
-    remark: ''
+    remark: '',
+    attachments: []
 })
+const uploadHeaders = ref({
+  Authorization: `Bearer ${localStorage.getItem('token') || ''}`
+})
+const uploadFileList = ref([])
 const editForm = ref({
   id: null,
   status: 'SUBMITTED',
@@ -314,7 +345,8 @@ const fetchPayments = async (id) => {
 }
 
 const handlePayment = () => {
-    paymentForm.value = { amount: 0, payMethod: '微信', remark: '' }
+    paymentForm.value = { amount: 0, payMethod: '微信', remark: '', attachments: [] }
+    uploadFileList.value = []
     paymentDialogVisible.value = true
 }
 
@@ -350,9 +382,16 @@ const submitPayment = async () => {
         return
     }
     try {
+        let remark = paymentForm.value.remark || ''
+        if (paymentForm.value.attachments && paymentForm.value.attachments.length > 0) {
+            const urls = paymentForm.value.attachments.join(',')
+            remark = `${remark ? remark + ' ' : ''}[附件:${urls}]`
+        }
         const res = await createPayment({
             orderId: order.value.id,
-            ...paymentForm.value
+            amount: paymentForm.value.amount,
+            payMethod: paymentForm.value.payMethod,
+            remark
         })
         if (res.code === 200) {
             ElMessage.success('收款成功')
@@ -363,6 +402,42 @@ const submitPayment = async () => {
             ElMessage.error(res.message)
         }
     } catch(e) {}
+}
+
+const handleUploadSuccess = (response, file, fileList) => {
+  if (response && response.code === 200) {
+    const url = response.data
+    paymentForm.value.attachments.push(url)
+    uploadFileList.value = fileList.map(f => ({
+      name: f.name,
+      url: f.response?.data || f.url
+    }))
+  } else {
+    ElMessage.error('上传失败')
+  }
+}
+
+const handleUploadRemove = (file, fileList) => {
+  const url = file.url || (file.response && file.response.data)
+  if (url) {
+    paymentForm.value.attachments = paymentForm.value.attachments.filter(u => u !== url)
+  }
+  uploadFileList.value = fileList.map(f => ({
+    name: f.name,
+    url: f.response?.data || f.url
+  }))
+}
+
+const parseAttachments = (value) => {
+  if (!value) return []
+  return value.split(',').map(s => s.trim()).filter(Boolean)
+}
+
+const getAttachments = (row) => {
+  if (!row) return []
+  if (Array.isArray(row.attachmentList)) return row.attachmentList
+  if (typeof row.attachments === 'string') return parseAttachments(row.attachments)
+  return []
 }
 
 const submitAfterSales = async () => {
@@ -549,6 +624,25 @@ const getProductionStep = (status) => {
     margin-bottom: 15px;
     border-left: 3px solid #409EFF;
     padding-left: 8px;
+}
+
+:deep(.el-upload--picture-card) {
+  width: 100px;
+  height: 100px;
+}
+
+.attachment-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.attachment-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #409EFF;
+  text-decoration: none;
 }
 
 :deep(.highlight-label-blue) {

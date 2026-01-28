@@ -25,6 +25,9 @@ public class OrderPaymentService {
     
     @Autowired
     private WindowOrderMapper windowOrderMapper;
+    
+    @Autowired
+    private com.window.system.mapper.OrderPaymentAttachmentMapper orderPaymentAttachmentMapper;
 
     @Transactional(rollbackFor = Exception.class)
     public Result<String> create(PaymentCreateReq req) {
@@ -39,8 +42,18 @@ public class OrderPaymentService {
         if (payment.getPayTime() == null) {
             payment.setPayTime(LocalDateTime.now());
         }
+        // Persist first to get payment id
         
         orderPaymentMapper.insert(payment);
+        
+        if (req.getAttachments() != null && !req.getAttachments().isEmpty()) {
+            for (String url : req.getAttachments()) {
+                com.window.system.model.entity.OrderPaymentAttachment att = new com.window.system.model.entity.OrderPaymentAttachment();
+                att.setPaymentId(payment.getId());
+                att.setUrl(url);
+                orderPaymentAttachmentMapper.insert(att);
+            }
+        }
         
         // Update order payment status
         updateOrderPaymentStatus(order);
@@ -77,6 +90,17 @@ public class OrderPaymentService {
     }
 
     public Result<List<OrderPayment>> listByOrderId(Long orderId) {
-        return Result.success(orderPaymentMapper.getByOrderId(orderId));
+        List<OrderPayment> list = orderPaymentMapper.getByOrderId(orderId);
+        for (OrderPayment p : list) {
+            List<com.window.system.model.entity.OrderPaymentAttachment> atts = orderPaymentAttachmentMapper.getByPaymentId(p.getId());
+            if (atts != null && !atts.isEmpty()) {
+                java.util.List<String> urls = new java.util.ArrayList<>();
+                for (com.window.system.model.entity.OrderPaymentAttachment a : atts) {
+                    urls.add(a.getUrl());
+                }
+                p.setAttachmentList(urls);
+            }
+        }
+        return Result.success(list);
     }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -23,6 +24,8 @@ public class OrderPayment {
     
     private String remark;
     
+    private String attachments;
+    
     private Long createBy;
     
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -30,4 +33,7 @@ public class OrderPayment {
     
     // VO fields
     private String createByName;
+    
+    // VO attachments
+    private List<String> attachmentList;
 }
