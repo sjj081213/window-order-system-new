@@ -409,6 +409,13 @@ const submitPayment = async () => {
         ElMessage.warning('金额必须大于0')
         return
     }
+    const price = Number(order.value.price || 0)
+    const paid = Number(order.value.paidAmount || 0)
+    const add = Number(paymentForm.value.amount || 0)
+    if (price > 0 && paid + add > price) {
+        ElMessage.warning('收款总额不能超过订单总额')
+        return
+    }
     try {
         const res = await createPayment({
             orderId: order.value.id,

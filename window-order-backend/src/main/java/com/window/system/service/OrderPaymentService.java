@@ -36,6 +36,17 @@ public class OrderPaymentService {
             return Result.error("Order not found");
         }
         
+        if (order.getPrice() != null && order.getPrice().compareTo(BigDecimal.ZERO) > 0) {
+            List<OrderPayment> existed = orderPaymentMapper.getByOrderId(order.getId());
+            BigDecimal totalPaid = existed.stream()
+                    .map(OrderPayment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal after = totalPaid.add(req.getAmount() == null ? BigDecimal.ZERO : req.getAmount());
+            if (after.compareTo(order.getPrice()) > 0) {
+                return Result.error("收款金额总和不能大于订单总额");
+            }
+        }
+        
         OrderPayment payment = new OrderPayment();
         BeanUtils.copyProperties(req, payment);
         payment.setCreateBy(req.getCurrentUserId());
