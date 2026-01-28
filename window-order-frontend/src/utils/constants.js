@@ -1,0 +1,23 @@
+export const ORDER_STATUS = {
+    DRAFT: 'DRAFT',
+    SUBMITTED: 'SUBMITTED'
+}
+
+export const INSTALL_PROGRESS = {
+    WAITING: 'WAITING',
+    SCHEDULED: 'SCHEDULED',
+    INSTALLING: 'INSTALLING',
+    FINISHED: 'FINISHED'
+}
+
+export const PRODUCTION_PROGRESS = {
+    WAITING: 'WAITING',
+    PRODUCING: 'PRODUCING',
+    FINISHED: 'FINISHED'
+}
+
+export const ROLES = {
+    ADMIN: 'ADMIN',
+    SALES: 'SALES',
+    INSTALLER: 'INSTALLER'
+}

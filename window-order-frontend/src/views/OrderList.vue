@@ -1,0 +1,912 @@
+<template>
+  <div class="app-container">
+    <div class="main-content">
+      <!-- Search -->
+      <el-card class="search-card" shadow="hover">
+        <el-form :inline="true" :model="queryForm" class="search-form">
+          <el-row :gutter="20" style="width: 100%">
+            <el-col :span="6">
+              <el-form-item label="订单号" class="w-full">
+                <el-input v-model="queryForm.orderNo" placeholder="输入订单号查询" clearable :prefix-icon="Search" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="客户名" class="w-full">
+                <el-select
+                    v-model="queryForm.customerId"
+                    filterable
+                    remote
+                    reserve-keyword
+                    placeholder="输入姓名搜索"
+                    :remote-method="searchCustomers"
+                    :loading="customerLoading"
+                    clearable
+                    class="w-full"
+                >
+                    <el-option
+                        v-for="item in customerOptions"
+                        :key="item.id"
+                        :label="item.name + ' (' + item.phone + ')'"
+                        :value="item.id"
+                    />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="电话" class="w-full">
+                <el-input v-model="queryForm.customerPhone" placeholder="输入电话查询" clearable :prefix-icon="Phone" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="品牌" class="w-full">
+                <el-select v-model="queryForm.brand" placeholder="选择品牌" clearable class="w-full">
+                  <el-option v-for="item in brandList" :key="item.id" :label="item.name" :value="item.name" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <!-- Second row for extra fields and actions -->
+           <el-row :gutter="20" style="width: 100%; margin-top: 10px;">
+             <el-col :span="6">
+              <el-form-item label="销售员" v-if="userStore.currentUser.role === 'ADMIN'" class="w-full">
+                <el-select v-model="queryForm.searchSalespersonId" placeholder="选择销售" clearable filterable class="w-full">
+                  <el-option v-for="item in salesList" :key="item.id" :label="item.realName || item.username" :value="item.id" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="安装师傅" v-else-if="userStore.currentUser.role === 'ADMIN' || userStore.currentUser.role === 'SALES'" class="w-full">
+                <el-select v-model="queryForm.searchInstallerId" placeholder="选择师傅" clearable filterable class="w-full">
+                  <el-option v-for="item in installerList" :key="item.id" :label="item.realName || item.username" :value="item.id" />
+                </el-select>
+              </el-form-item>
+             </el-col>
+             <el-col :span="6" v-if="userStore.currentUser.role === 'ADMIN'">
+                <el-form-item label="安装师傅" class="w-full">
+                  <el-select v-model="queryForm.searchInstallerId" placeholder="选择师傅" clearable filterable class="w-full">
+                    <el-option v-for="item in installerList" :key="item.id" :label="item.realName || item.username" :value="item.id" />
+                  </el-select>
+                </el-form-item>
+             </el-col>
+             <el-col :span="userStore.currentUser.role === 'ADMIN' ? 12 : 18" class="text-right">
+                <el-form-item class="search-actions">
+                  <el-button type="primary" @click="handleSearch" :icon="Search">查询</el-button>
+                  <el-button @click="handleReset" :icon="Refresh">重置</el-button>
+                  <el-button type="warning" @click="handleExport" :icon="Download">导出</el-button>
+                  <el-button type="success" @click="handleCreate" :icon="Plus" v-if="userStore.currentUser.role !== 'INSTALLER'">新建订单</el-button>
+                </el-form-item>
+             </el-col>
+           </el-row>
+        </el-form>
+      </el-card>
+
+      <!-- Table -->
+      <el-card class="table-card" shadow="hover">
+        <el-table :data="tableData" border stripe style="width: 100%" v-loading="loading" :header-cell-style="{background:'#f5f7fa', color:'#606266'}">
+          <el-table-column prop="orderNo" label="订单号" width="190" show-overflow-tooltip />
+          <el-table-column prop="customerName" label="客户名" width="90" />
+          <el-table-column prop="customerPhone" label="电话" width="120" />
+          <el-table-column prop="brand" label="品牌" width="90" />
+          <el-table-column label="安装地址" min-width="150" show-overflow-tooltip>
+             <template #default="scope">
+                {{ scope.row.address }}
+             </template>
+          </el-table-column>
+          <el-table-column label="尺寸 (宽x高)" width="140">
+            <template #default="scope">
+              <el-tag type="info" size="small">{{ scope.row.width }}mm x {{ scope.row.height }}mm</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="price" label="价格" width="100">
+             <template #default="scope">
+               <span class="price-text">¥ {{ scope.row.price }}</span>
+             </template>
+          </el-table-column>
+          <el-table-column prop="paidAmount" label="已付" width="100">
+             <template #default="scope">
+               <span class="price-text" style="color: #67c23a">¥ {{ scope.row.paidAmount || 0 }}</span>
+             </template>
+          </el-table-column>
+          <el-table-column label="支付状态" width="90">
+            <template #default="scope">
+               <el-tag size="small" :type="getPaymentStatusType(scope.row.paymentStatus)" effect="light">
+                  {{ getPaymentStatusLabel(scope.row.paymentStatus) }}
+                </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="90">
+            <template #default="scope">
+               <el-tag v-if="scope.row.status === 'DRAFT'" type="info" effect="plain">草稿</el-tag>
+               <el-tag v-else type="success" effect="plain">已提交</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="生产进度" width="100">
+            <template #default="scope">
+               <el-tag size="small" :type="getProgressType(scope.row.productionProgress)" effect="light">
+                  {{ getProgressLabel(scope.row.productionProgress) }}
+                </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="安装进度" width="100">
+            <template #default="scope">
+               <el-tag size="small" :type="getProgressType(scope.row.installProgress)" effect="light">
+                  {{ getProgressLabel(scope.row.installProgress) }}
+                </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="salespersonName" label="销售员" width="90" />
+          <el-table-column prop="installerName" label="安装师傅" width="90">
+            <template #default="scope">
+              <span v-if="scope.row.installerName">{{ scope.row.installerName }}</span>
+              <span v-else class="text-placeholder">未分配</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" fixed="right" width="190" align="center">
+            <template #default="scope">
+              <div class="action-cell">
+                <el-tooltip content="详情" placement="top">
+                  <el-button class="action-btn" circle size="small" type="primary" plain :icon="View" @click="handleDetail(scope.row)" />
+                </el-tooltip>
+                <el-tooltip content="编辑" placement="top">
+                  <el-button class="action-btn" circle size="small" type="primary" plain :icon="Edit" @click="handleEdit(scope.row)" />
+                </el-tooltip>
+                <el-tooltip v-if="userStore.currentUser.role === 'ADMIN' || userStore.currentUser.role === 'SALES'" content="复尺" placement="top">
+                  <el-button class="action-btn" circle size="small" type="warning" plain :icon="Tools" @click="handleAssignRemeasure(scope.row)" />
+                </el-tooltip>
+                <el-tooltip v-if="userStore.currentUser.role === 'ADMIN' || (userStore.currentUser.role === 'SALES' && scope.row.salespersonId === userStore.currentUser.id)" content="删除" placement="top">
+                  <el-button class="action-btn" circle size="small" type="danger" plain :icon="Delete" @click="handleDelete(scope.row)" />
+                </el-tooltip>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div class="pagination">
+          <el-pagination
+            v-model:current-page="queryForm.pageNo"
+            v-model:page-size="queryForm.pageSize"
+            :total="total"
+            :page-sizes="[10, 20, 50, 100]"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="fetchData"
+            @current-change="fetchData"
+            background
+          />
+        </div>
+      </el-card>
+    </div>
+
+    <!-- Dialog -->
+    <el-dialog v-model="dialogVisible" :title="dialogType === 'create' ? '新建订单' : '编辑订单'" width="800px" destroy-on-close>
+      <el-form :model="form" label-width="100px" class="dialog-form">
+        <div class="form-section-title">客户信息</div>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="客户姓名">
+              <el-input v-model="form.customerName" :prefix-icon="User" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+             <el-form-item label="联系电话">
+              <el-input v-model="form.customerPhone" :prefix-icon="Phone" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="安装区域">
+            <el-cascader
+                v-model="form.regionCodes"
+                :options="regionData"
+                placeholder="请选择省/市/区"
+                style="width: 100%"
+                clearable
+            />
+        </el-form-item>
+        <el-form-item label="详细地址">
+          <el-input v-model="form.detailAddress" type="textarea" :rows="2" placeholder="请输入街道、小区、楼号等详细信息" />
+        </el-form-item>
+
+        <div class="form-section-title">窗户详情</div>
+        <el-row :gutter="20">
+          <el-col :span="8">
+             <el-form-item label="品牌">
+              <el-select v-model="form.brand" placeholder="选择品牌" style="width: 100%">
+                <el-option v-for="item in brandList" :key="item.id" :label="item.name" :value="item.name" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+             <el-form-item label="窗型">
+               <el-select v-model="form.windowType" placeholder="选择/输入" style="width: 100%" allow-create filterable default-first-option>
+                 <el-option label="推拉窗" value="推拉窗" />
+                 <el-option label="平开窗" value="平开窗" />
+                 <el-option label="内倒窗" value="内倒窗" />
+                 <el-option label="固定窗" value="固定窗" />
+               </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="颜色">
+               <el-input v-model="form.color" placeholder="如：白色" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="宽度(mm)">
+              <el-input-number v-model="form.width" controls-position="right" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="高度(mm)">
+              <el-input-number v-model="form.height" controls-position="right" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="玻璃规格">
+               <el-input v-model="form.glassSpec" placeholder="如：5+12A+5" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="订单价格">
+              <el-input-number v-model="form.price" :precision="2" :step="100" :min="0" controls-position="right" style="width: 100%">
+                 <template #prefix>￥</template>
+              </el-input-number>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <div class="form-section-title">进度与人员</div>
+        <el-row :gutter="20">
+          <el-col :span="12">
+             <el-form-item label="安装师傅">
+                <el-select v-model="form.installerId" placeholder="选择安装师傅" style="width: 100%" filterable>
+                  <el-option v-for="item in installerList" :key="item.id" :label="item.realName || item.username" :value="item.id" />
+                </el-select>
+            </el-form-item>
+          </el-col>
+           <el-col :span="12">
+             <el-form-item label="订单状态">
+                <el-radio-group v-model="form.status" @change="handleStatusChange">
+                  <el-radio label="DRAFT">草稿</el-radio>
+                  <el-radio label="SUBMITTED">正式提交</el-radio>
+                </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12" v-if="dialogType === 'edit'">
+             <el-form-item label="生产进度">
+               <el-select v-model="form.productionProgress" style="width: 100%" :disabled="form.status === 'DRAFT'">
+                <el-option label="等待中" value="WAITING" />
+                <el-option label="生产中" value="PRODUCING" />
+                <el-option label="已完成" value="FINISHED" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12" v-if="dialogType === 'edit'">
+            <el-form-item label="安装进度">
+              <el-select v-model="form.installProgress" style="width: 100%" :disabled="form.status === 'DRAFT'">
+                <el-option label="等待中" value="WAITING" />
+                <el-option label="已排期" value="SCHEDULED" />
+                <el-option label="安装中" value="INSTALLING" :disabled="form.productionProgress !== 'FINISHED'" />
+                <el-option label="已完成" value="FINISHED" :disabled="form.productionProgress !== 'FINISHED'" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20" v-if="dialogType === 'edit'">
+          <el-col :span="12">
+            <el-form-item label="预约安装">
+              <el-date-picker
+                v-model="form.scheduledInstallDate"
+                type="datetime"
+                placeholder="选择预约安装日期"
+                style="width: 100%"
+                format="YYYY-MM-DD HH:mm"
+                value-format="YYYY-MM-DD HH:mm:ss"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="实际完成">
+              <el-date-picker
+                v-model="form.actualInstallEndDate"
+                type="datetime"
+                placeholder="选择实际完成日期"
+                style="width: 100%"
+                format="YYYY-MM-DD HH:mm"
+                value-format="YYYY-MM-DD HH:mm:ss"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogVisible = false">取 消</el-button>
+          <el-button type="primary" @click="submitForm">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- Assign Remeasure Dialog -->
+    <el-dialog v-model="assignDialogVisible" title="指派复尺任务" width="500px">
+      <el-form :model="assignForm" label-width="100px">
+        <el-form-item label="复尺师傅">
+          <el-select v-model="assignForm.assigneeId" placeholder="选择师傅" style="width: 100%" filterable>
+            <el-option v-for="item in installerList" :key="item.id" :label="item.realName || item.username" :value="item.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="assignForm.remark" type="textarea" :rows="3" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="assignDialogVisible = false">取 消</el-button>
+          <el-button type="primary" @click="submitAssign">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, Plus, Edit, Delete, User, Phone, Goods, House, SwitchButton, UserFilled, ArrowDown, View, Refresh, Download, Tools } from '@element-plus/icons-vue'
+import { regionData, codeToText } from 'element-china-area-data'
+import { listOrders, createOrder, updateOrder, deleteOrder } from '../api/order'
+import { assignRemeasureTask } from '../api/remeasure'
+import { listCustomers, getCustomerDetail } from '../api/customer'
+import { useUserStore } from '../stores/user'
+import request from '@/utils/request'
+import { ORDER_STATUS, INSTALL_PROGRESS, PRODUCTION_PROGRESS } from '../utils/constants'
+
+const router = useRouter()
+const userStore = useUserStore()
+// Don't destructure currentUser here to maintain reactivity and avoid null errors
+// const currentUser = userStore.currentUser 
+const route = useRoute()
+const loading = ref(false)
+const tableData = ref([])
+const brandList = ref([])
+const salesList = ref([])
+const installerList = ref([])
+const customerOptions = ref([])
+const customerLoading = ref(false)
+const total = ref(0)
+const dialogVisible = ref(false)
+const dialogType = ref('create')
+
+const queryForm = reactive({
+  pageNo: 1,
+  pageSize: 10,
+  orderNo: '',
+  customerId: null,
+  customerName: '',
+  customerPhone: '',
+  brand: '',
+  searchSalespersonId: null,
+  searchInstallerId: null,
+  currentUserId: null,
+  currentUserRole: ''
+})
+
+const form = reactive({
+  id: null,
+  customerName: '',
+  customerPhone: '',
+  address: '', // Full display address
+  regionCodes: [], // [provCode, cityCode, distCode]
+  province: '',
+  city: '',
+  district: '',
+  detailAddress: '',
+  brand: '',
+  windowType: '',
+  color: '',
+  glassSpec: '',
+  width: 0,
+  height: 0,
+  price: 0,
+  installProgress: 'WAITING',
+  productionProgress: 'WAITING',
+  scheduledInstallDate: null,
+  actualInstallEndDate: null,
+  status: 'SUBMITTED',
+  salespersonId: null,
+  installerId: null,
+  currentUserId: null,
+  currentUserRole: ''
+})
+
+onMounted(async () => {
+  console.log('OrderList mounted start')
+  // Pinia has user, but check if logged in
+  if (!userStore.currentUser?.id) {
+    router.push('/login')
+    return
+  }
+  queryForm.currentUserId = userStore.currentUser.id
+  queryForm.currentUserRole = userStore.currentUser.role
+  
+  // Handle customerId from router
+  const customerId = route.query.customerId
+  if (customerId) {
+      queryForm.customerId = Number(customerId)
+      // Pre-load customer info for display
+      await fetchCustomerDetail(queryForm.customerId)
+  }
+  
+  try {
+    await fetchBrands()
+  } catch (e) {
+    console.error('Fetch brands failed', e)
+  }
+  
+  try {
+    await fetchUsers()
+  } catch (e) {
+    console.error('Fetch users failed', e)
+  }
+  
+  fetchData()
+})
+
+const fetchCustomerDetail = async (id) => {
+    try {
+        const res = await getCustomerDetail(id)
+        if (res.code === 200 && res.data) {
+            customerOptions.value = [{ id: res.data.id, name: res.data.name, phone: res.data.phone }]
+        }
+    } catch(e) {}
+}
+
+const searchCustomers = async (query) => {
+    if (query !== '') {
+        customerLoading.value = true
+        try {
+            const res = await listCustomers({ name: query, pageNo: 1, pageSize: 20 })
+            if (res.code === 200) {
+                customerOptions.value = res.data.list
+            }
+        } finally {
+            customerLoading.value = false
+        }
+    } else {
+        customerOptions.value = []
+    }
+}
+
+const fetchBrands = async () => {
+    try {
+        const res = await request.get('/brand/all')
+        if (res.code === 200) {
+            brandList.value = res.data
+        }
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+const fetchUsers = async () => {
+    try {
+        const salesRes = await request.get('/auth/role/SALES')
+        if (salesRes.code === 200) {
+            salesList.value = salesRes.data
+        }
+        const installerRes = await request.get('/auth/role/INSTALLER')
+        if (installerRes.code === 200) {
+            installerList.value = installerRes.data
+        }
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const res = await listOrders(queryForm)
+    if (res.code === 200) {
+      tableData.value = res.data.list
+      total.value = res.data.total
+    }
+  } catch (error) {
+    // handled by interceptor
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleSearch = () => {
+  queryForm.pageNo = 1
+  fetchData()
+}
+
+const handleReset = () => {
+  queryForm.orderNo = ''
+  queryForm.customerId = null
+  queryForm.customerName = ''
+  queryForm.customerPhone = ''
+  queryForm.brand = ''
+  queryForm.searchSalespersonId = null
+  queryForm.searchInstallerId = null
+  queryForm.pageNo = 1
+  fetchData()
+}
+
+const handleExport = async () => {
+    try {
+        const response = await request.post('/dashboard/export', queryForm, {
+            responseType: 'blob'
+        })
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', '订单列表.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+    } catch (e) {
+        ElMessage.error('导出失败')
+    }
+}
+
+const logout = () => {
+  userStore.clearUser()
+  router.push('/login')
+}
+
+const handleCreate = () => {
+  dialogType.value = 'create'
+  Object.assign(form, {
+    id: null,
+    customerName: '',
+    customerPhone: '',
+    address: '',
+    regionCodes: [],
+    province: '',
+    city: '',
+    district: '',
+    detailAddress: '',
+    brand: '',
+    windowType: '',
+    color: '',
+    glassSpec: '',
+    width: 0,
+    height: 0,
+    price: 0,
+    installProgress: INSTALL_PROGRESS.WAITING,
+    productionProgress: PRODUCTION_PROGRESS.WAITING,
+    scheduledInstallDate: null,
+    actualInstallEndDate: null,
+    status: ORDER_STATUS.SUBMITTED,
+    salespersonId: currentUser.id,
+    installerId: null
+  })
+  dialogVisible.value = true
+}
+
+const handleEdit = (row) => {
+  if (currentUser.role === 'SALES' && row.salespersonId !== currentUser.id) {
+      ElMessage.warning('您只能修改自己的订单')
+      return
+  }
+  dialogType.value = 'edit'
+  Object.assign(form, row)
+  
+  // Handle address parsing
+  // Priority: Use individual fields if available, else fallback to regionCodes, else empty
+  if (row.province && row.city && row.district) {
+      form.regionCodes = [row.province, row.city, row.district]
+  } else if (row.regionCodes) {
+      if (Array.isArray(row.regionCodes)) {
+          form.regionCodes = row.regionCodes
+      } else {
+          form.regionCodes = row.regionCodes.split(',')
+      }
+  } else {
+      form.regionCodes = []
+      // Legacy compatibility: if no structured address, put full address in detail
+      if (!row.detailAddress && row.address) {
+          form.detailAddress = row.address
+      }
+  }
+  
+  // Default status if missing
+  if (!form.status) {
+      form.status = ORDER_STATUS.SUBMITTED
+  }
+
+  // Enforce DRAFT logic on open
+  if (form.status === ORDER_STATUS.DRAFT) {
+      form.installProgress = INSTALL_PROGRESS.WAITING
+      form.productionProgress = PRODUCTION_PROGRESS.WAITING
+  }
+  
+  dialogVisible.value = true
+}
+
+const handleDetail = (row) => {
+    router.push(`/order/detail/${row.id}`)
+}
+
+const handleDelete = (row) => {
+  // Permission check logic
+  let canDelete = false
+  if (currentUser.role === 'ADMIN') {
+      canDelete = true
+  } else if (currentUser.role === 'SALES' && row.salespersonId === currentUser.id) {
+      canDelete = true
+  }
+  
+  if (!canDelete) {
+      ElMessage.warning('无权删除此订单')
+      return
+  }
+  
+  ElMessageBox.confirm('确认删除该订单吗？', '警告', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    const res = await deleteOrder(row.id, {
+        currentUserId: currentUser.id,
+        currentUserRole: currentUser.role
+    })
+    if (res.code === 200) {
+      ElMessage.success('已删除')
+      fetchData()
+    }
+  })
+}
+
+const handleStatusChange = (val) => {
+    if (val === ORDER_STATUS.DRAFT) {
+        form.installProgress = INSTALL_PROGRESS.WAITING
+        form.productionProgress = PRODUCTION_PROGRESS.WAITING
+    }
+}
+
+const submitForm = async () => {
+  // Attach auth info
+  form.currentUserId = userStore.currentUser.id
+  form.currentUserRole = userStore.currentUser.role
+  
+  // Enforce DRAFT logic before submit
+  if (form.status === ORDER_STATUS.DRAFT) {
+      form.installProgress = INSTALL_PROGRESS.WAITING
+      form.productionProgress = PRODUCTION_PROGRESS.WAITING
+  }
+  
+  // Construct display address and split codes
+  if (form.regionCodes && form.regionCodes.length > 0) {
+      const regionText = form.regionCodes.map(code => codeToText[code]).join(' / ')
+      form.address = `${regionText} ${form.detailAddress || ''}`
+      
+      // Split into individual fields
+      if (form.regionCodes.length >= 1) form.province = form.regionCodes[0]
+      if (form.regionCodes.length >= 2) form.city = form.regionCodes[1]
+      if (form.regionCodes.length >= 3) form.district = form.regionCodes[2]
+  } else {
+      form.address = form.detailAddress
+      form.province = ''
+      form.city = ''
+      form.district = ''
+  }
+  
+  const payload = { ...form }
+  // We still send regionCodes as string for backward compatibility or just ignore it on backend if we use individual fields
+  if (payload.regionCodes && Array.isArray(payload.regionCodes)) {
+      payload.regionCodes = payload.regionCodes.join(',')
+  }
+  
+  try {
+    const res = dialogType.value === 'create' ? await createOrder(payload) : await updateOrder(payload)
+    if (res.code === 200) {
+      ElMessage.success('操作成功')
+      dialogVisible.value = false
+      fetchData()
+    } else {
+      ElMessage.error(res.message)
+    }
+  } catch (error) {
+    // handled by interceptor
+  }
+}
+
+const assignDialogVisible = ref(false)
+const assignForm = reactive({
+    orderId: null,
+    assigneeId: null,
+    remark: ''
+})
+
+const handleAssignRemeasure = (row) => {
+    assignForm.orderId = row.id
+    assignForm.assigneeId = null
+    assignForm.remark = ''
+    assignDialogVisible.value = true
+}
+
+const submitAssign = async () => {
+    if (!assignForm.assigneeId) {
+        ElMessage.warning('请选择复尺师傅')
+        return
+    }
+    try {
+        const res = await assignRemeasureTask(assignForm)
+        if (res.code === 200) {
+            ElMessage.success('指派成功')
+            assignDialogVisible.value = false
+        } else {
+            ElMessage.error(res.message)
+        }
+    } catch (e) {}
+}
+
+// Helpers
+const getProgressType = (status) => {
+  const map = {
+    'WAITING': 'info',
+    'SCHEDULED': 'warning',
+    'INSTALLING': 'primary',
+    'PRODUCING': 'primary',
+    'FINISHED': 'success'
+  }
+  return map[status] || 'info'
+}
+
+const getProgressLabel = (status) => {
+  const map = {
+    'WAITING': '等待中',
+    'SCHEDULED': '已排期',
+    'INSTALLING': '安装中',
+    'PRODUCING': '生产中',
+    'FINISHED': '已完成'
+  }
+  return map[status] || status
+}
+
+const getPaymentStatusType = (status) => {
+  const map = {
+    'UNPAID': 'danger',
+    'PARTIAL': 'warning',
+    'PAID': 'success'
+  }
+  return map[status] || 'info'
+}
+
+const getPaymentStatusLabel = (status) => {
+  const map = {
+    'UNPAID': '未支付',
+    'PARTIAL': '部分支付',
+    'PAID': '已付清'
+  }
+  return map[status] || '未支付'
+}
+</script>
+
+<style scoped>
+.app-container {
+  min-height: 100%;
+  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  padding: 0;
+  max-width: 100%;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.search-card {
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: none;
+}
+
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.text-right {
+  text-align: right;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Remove default inline form margin */
+.search-form .el-form-item {
+  margin-right: 0;
+  margin-bottom: 10px;
+}
+
+.search-actions {
+  margin-left: auto;
+}
+
+.table-card {
+  border-radius: 8px;
+  border: none;
+  min-height: 500px;
+}
+
+.price-text {
+  color: #f56c6c;
+  font-weight: bold;
+}
+
+.text-placeholder {
+  color: #909399;
+  font-size: 12px;
+}
+
+.action-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.action-btn {
+  box-shadow: 0 10px 22px rgba(17, 24, 39, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(17, 24, 39, 0.14);
+}
+
+.status-tags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.pagination {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.form-section-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #303133;
+  margin: 10px 0 15px 0;
+  padding-left: 10px;
+  border-left: 3px solid #409EFF;
+  line-height: 1.2;
+}
+
+:deep(.el-dialog) {
+  border-radius: 12px;
+}
+
+:deep(.el-dialog__header) {
+  margin-right: 0;
+  border-bottom: 1px solid #EBEEF5;
+  padding: 20px;
+}
+
+:deep(.el-dialog__footer) {
+  border-top: 1px solid #EBEEF5;
+  padding: 20px;
+}
+</style>
