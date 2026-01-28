@@ -1,6 +1,8 @@
 # 统一.gitignore配置 - 版本: 2025-07-10
 # 适用于所有Java Maven项目
 
+node_modules/
+
 # Maven构建目录
 target/
 .mvn/
@@ -18,6 +20,7 @@ target/
 
 # 日志文件
 *.log
+
 
 # 系统文件
 .DS_Store
