@@ -256,35 +256,46 @@
           </el-col>
         </el-row>
 
-        <div class="form-section-title">进度与人员</div>
+        <div class="form-section-title">人员信息</div>
         <el-row :gutter="20">
           <el-col :span="12">
-             <el-form-item label="安装师傅">
-                <el-select v-model="form.installerId" placeholder="选择安装师傅" style="width: 100%" filterable>
-                  <el-option v-for="item in installerList" :key="item.id" :label="item.realName || item.username" :value="item.id" />
-                </el-select>
+            <el-form-item label="销售员">
+              <el-input :model-value="form.salespersonName || getUserDisplayName(form.salespersonId, salesList)" disabled />
             </el-form-item>
           </el-col>
-           <el-col :span="12">
-             <el-form-item label="订单状态">
-                <el-radio-group v-model="form.status" @change="handleStatusChange">
-                  <el-radio label="DRAFT">草稿</el-radio>
-                  <el-radio label="SUBMITTED">正式提交</el-radio>
-                </el-radio-group>
+          <el-col :span="12">
+            <el-form-item label="安装师傅">
+              <el-select v-model="form.installerId" placeholder="选择安装师傅" style="width: 100%" filterable>
+                <el-option v-for="item in installerList" :key="item.id" :label="item.realName || item.username" :value="item.id" />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
+
+        <div class="form-section-title">订单进度</div>
         <el-row :gutter="20">
-          <el-col :span="12" v-if="dialogType === 'edit'">
-             <el-form-item label="生产进度">
-               <el-select v-model="form.productionProgress" style="width: 100%" :disabled="form.status === 'DRAFT'">
+          <el-col :span="24">
+            <el-form-item label="订单状态">
+              <el-radio-group v-model="form.status" @change="handleStatusChange">
+                <el-radio label="DRAFT">草稿</el-radio>
+                <el-radio label="SUBMITTED">正式提交</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20" v-if="dialogType === 'edit'">
+          <el-col :span="24">
+            <el-form-item label="生产进度">
+              <el-select v-model="form.productionProgress" style="width: 100%" :disabled="form.status === 'DRAFT'">
                 <el-option label="等待中" value="WAITING" />
                 <el-option label="生产中" value="PRODUCING" />
                 <el-option label="已完成" value="FINISHED" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12" v-if="dialogType === 'edit'">
+        </el-row>
+        <el-row :gutter="20" v-if="dialogType === 'edit'">
+          <el-col :span="24">
             <el-form-item label="安装进度">
               <el-select v-model="form.installProgress" style="width: 100%" :disabled="form.status === 'DRAFT'">
                 <el-option label="等待中" value="WAITING" />
@@ -587,6 +598,7 @@ const handleCreate = () => {
     actualInstallEndDate: null,
     status: ORDER_STATUS.SUBMITTED,
     salespersonId: userStore.currentUser.id,
+    salespersonName: userStore.currentUser.realName || userStore.currentUser.username,
     installerId: null
   })
   dialogVisible.value = true
@@ -599,6 +611,9 @@ const handleEdit = (row) => {
   }
   dialogType.value = 'edit'
   Object.assign(form, row)
+  if (!form.salespersonId) {
+      form.salespersonId = userStore.currentUser.id
+  }
   
   // Handle address parsing
   // Priority: Use individual fields if available, else fallback to regionCodes, else empty
@@ -748,6 +763,12 @@ const submitAssign = async () => {
             ElMessage.error(res.message)
         }
     } catch (e) {}
+}
+
+const getUserDisplayName = (id, listRef) => {
+  if (!id || !listRef?.value) return ''
+  const u = listRef.value.find(item => item.id === id)
+  return u ? (u.realName || u.username) : ''
 }
 
 // Helpers

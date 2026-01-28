@@ -18,11 +18,12 @@
         <template #header>
           <div class="card-header">
             <span>基本信息</span>
-            <div>
-                 <el-button type="warning" size="small" @click="handleAfterSales" v-if="order.status !== 'DRAFT'">申请售后</el-button>
-                 <el-tag :type="getProgressType(order.installProgress)" effect="dark" class="status-tag ml-2">
-                    {{ getProgressLabel(order.installProgress) }}
-                 </el-tag>
+            <div class="header-actions">
+              <el-button type="primary" size="small" @click="openEdit">编辑订单</el-button>
+              <el-button type="warning" size="small" @click="handleAfterSales" v-if="order.status !== 'DRAFT'">申请售后</el-button>
+              <el-tag :type="getProgressType(order.installProgress)" effect="dark" class="status-tag">
+                {{ getProgressLabel(order.installProgress) }}
+              </el-tag>
             </div>
           </div>
         </template>
@@ -57,38 +58,48 @@
       <el-card class="box-card mt-4" shadow="never">
         <template #header>
           <div class="card-header">
-            <span>进度与人员</span>
+            <span>人员信息</span>
           </div>
         </template>
         <el-descriptions :column="2" border>
           <el-descriptions-item label="销售员">
-             <div class="user-info-cell">
-                 <span class="user-name">{{ order.salespersonName }}</span>
-             </div>
-             <div class="progress-wrapper">
-                 <div class="progress-label">生产进度</div>
-                 <el-steps :active="getProductionStep(order.productionProgress)" finish-status="success" align-center>
-                    <el-step title="等待" :icon="Timer" />
-                    <el-step title="生产" :icon="Tools" />
-                    <el-step title="完成" :icon="CircleCheck" />
-                 </el-steps>
-             </div>
+            <div class="user-info-cell">
+              <span class="user-name">{{ order.salespersonName }}</span>
+            </div>
           </el-descriptions-item>
           <el-descriptions-item label="安装师傅">
-              <div class="user-info-cell">
-                  <span v-if="order.installerName" class="user-name">{{ order.installerName }}</span>
-                  <span v-else class="text-gray">未分配</span>
-              </div>
-              <div class="progress-wrapper">
-                 <div class="progress-label">安装进度</div>
-                 <el-steps :active="getInstallStep(order.installProgress)" finish-status="success" align-center>
-                    <el-step title="等待" :icon="Timer" />
-                    <el-step title="排期" :icon="Calendar" />
-                    <el-step title="安装" :icon="Tools" />
-                    <el-step title="完成" :icon="CircleCheck" />
-                 </el-steps>
-             </div>
+            <div class="user-info-cell">
+              <span v-if="order.installerName" class="user-name">{{ order.installerName }}</span>
+              <span v-else class="text-gray">未分配</span>
+            </div>
           </el-descriptions-item>
+        </el-descriptions>
+      </el-card>
+
+      <el-card class="box-card mt-4" shadow="never">
+        <template #header>
+          <div class="card-header">
+            <span>订单进度</span>
+          </div>
+        </template>
+        <div class="progress-wrapper">
+          <div class="progress-label">生产进度</div>
+          <el-steps :active="getProductionStep(order.productionProgress)" finish-status="success" align-center>
+            <el-step title="等待" :icon="Timer" />
+            <el-step title="生产" :icon="Tools" />
+            <el-step title="完成" :icon="CircleCheck" />
+          </el-steps>
+        </div>
+        <div class="progress-wrapper">
+          <div class="progress-label">安装进度</div>
+          <el-steps :active="getInstallStep(order.installProgress)" finish-status="success" align-center>
+            <el-step title="等待" :icon="Timer" />
+            <el-step title="排期" :icon="Calendar" />
+            <el-step title="安装" :icon="Tools" />
+            <el-step title="完成" :icon="CircleCheck" />
+          </el-steps>
+        </div>
+        <el-descriptions :column="2" border class="mt-4">
           <el-descriptions-item label="预约安装日期" :span="2" label-class-name="highlight-label-blue" class-name="highlight-content-blue">
             {{ order.scheduledInstallDate ? order.scheduledInstallDate.replace('T', ' ') : '-' }}
           </el-descriptions-item>
@@ -177,6 +188,48 @@
             <el-button type="primary" @click="submitAfterSales">提交</el-button>
         </template>
     </el-dialog>
+
+    <!-- Edit Dialog -->
+    <el-dialog v-model="editDialogVisible" title="编辑订单" width="600px">
+      <el-form :model="editForm" label-width="100px">
+        <el-form-item label="订单状态">
+          <el-radio-group v-model="editForm.status">
+            <el-radio label="DRAFT">草稿</el-radio>
+            <el-radio label="SUBMITTED">正式提交</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="生产进度">
+          <el-select v-model="editForm.productionProgress" style="width: 100%" :disabled="editForm.status === 'DRAFT'">
+            <el-option label="等待中" value="WAITING" />
+            <el-option label="生产中" value="PRODUCING" />
+            <el-option label="已完成" value="FINISHED" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="安装进度">
+          <el-select v-model="editForm.installProgress" style="width: 100%" :disabled="editForm.status === 'DRAFT'">
+            <el-option label="等待中" value="WAITING" />
+            <el-option label="已排期" value="SCHEDULED" />
+            <el-option label="安装中" value="INSTALLING" :disabled="editForm.productionProgress !== 'FINISHED'" />
+            <el-option label="已完成" value="FINISHED" :disabled="editForm.productionProgress !== 'FINISHED'" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="安装师傅">
+          <el-select v-model="editForm.installerId" style="width: 100%" filterable>
+            <el-option v-for="item in installerList" :key="item.id" :label="item.realName || item.username" :value="item.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="预约安装">
+          <el-date-picker v-model="editForm.scheduledInstallDate" type="datetime" style="width: 100%" format="YYYY-MM-DD HH:mm" value-format="YYYY-MM-DD HH:mm:ss" />
+        </el-form-item>
+        <el-form-item label="实际完成">
+          <el-date-picker v-model="editForm.actualInstallEndDate" type="datetime" style="width: 100%" format="YYYY-MM-DD HH:mm" value-format="YYYY-MM-DD HH:mm:ss" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitEdit">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -186,20 +239,33 @@ import { useRoute, useRouter } from 'vue-router'
 import request from '@/utils/request'
 import { createPayment, listPayments } from '@/api/payment'
 import { createAfterSales } from '@/api/afterSales'
+import { updateOrder } from '@/api/order'
 import { ElMessage } from 'element-plus'
 import { Timer, Tools, CircleCheck, Calendar, Van, Money, Wallet } from '@element-plus/icons-vue'
+import { useUserStore } from '../stores/user'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 const loading = ref(false)
 const order = ref({})
 const paymentList = ref([])
 const paymentDialogVisible = ref(false)
 const afterSalesDialogVisible = ref(false)
+const editDialogVisible = ref(false)
 const paymentForm = ref({
     amount: 0,
     payMethod: '微信',
     remark: ''
+})
+const editForm = ref({
+  id: null,
+  status: 'SUBMITTED',
+  productionProgress: 'WAITING',
+  installProgress: 'WAITING',
+  installerId: null,
+  scheduledInstallDate: null,
+  actualInstallEndDate: null
 })
 const afterSalesForm = ref({
     issueDescription: '',
@@ -249,6 +315,27 @@ const handleAfterSales = () => {
     afterSalesDialogVisible.value = true
 }
 
+const openEdit = () => {
+  const cu = userStore.currentUser
+  let canEdit = false
+  if (cu.role === 'ADMIN') canEdit = true
+  else if (cu.role === 'SALES' && order.value.salespersonId === cu.id) canEdit = true
+  if (!canEdit) {
+    ElMessage.warning('无权编辑此订单')
+    return
+  }
+  editForm.value = {
+    id: order.value.id,
+    status: order.value.status || 'SUBMITTED',
+    productionProgress: order.value.productionProgress || 'WAITING',
+    installProgress: order.value.installProgress || 'WAITING',
+    installerId: order.value.installerId || null,
+    scheduledInstallDate: order.value.scheduledInstallDate || null,
+    actualInstallEndDate: order.value.actualInstallEndDate || null
+  }
+  editDialogVisible.value = true
+}
+
 const submitPayment = async () => {
     if (paymentForm.value.amount <= 0) {
         ElMessage.warning('金额必须大于0')
@@ -290,6 +377,29 @@ const submitAfterSales = async () => {
             ElMessage.error(res.message)
         }
     } catch(e) {}
+}
+
+const submitEdit = async () => {
+  const cu = userStore.currentUser
+  const payload = {
+    ...editForm.value,
+    currentUserId: cu.id,
+    currentUserRole: cu.role
+  }
+  if (payload.status === 'DRAFT') {
+    payload.installProgress = 'WAITING'
+    payload.productionProgress = 'WAITING'
+  }
+  try {
+    const res = await updateOrder(payload)
+    if (res.code === 200) {
+      ElMessage.success('更新成功')
+      editDialogVisible.value = false
+      fetchDetail(order.value.id)
+    } else {
+      ElMessage.error(res.message)
+    }
+  } catch(e) {}
 }
 
 const getPaymentStatusType = (status) => {
@@ -389,6 +499,12 @@ const getProductionStep = (status) => {
     justify-content: space-between;
     align-items: center;
     font-weight: bold;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .price-text {
