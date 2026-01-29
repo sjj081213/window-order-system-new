@@ -74,6 +74,7 @@ public class SysExportTaskService {
 
     @Async("taskExportExecutor")
     public void executeTask(Long taskId, String exportType, String exportParams) {
+        log.info("executeTask start {}，exportType {}", taskId, exportType);
         ExportStrategy strategy = exportStrategyFactory.getStrategy(exportType);
         if (strategy != null) {
             this.executeExport(taskId, () -> {
@@ -97,6 +98,8 @@ public class SysExportTaskService {
 
     @Async("taskExportExecutor")
     public void executeExport(Long taskId, Supplier<File> exportLogic) {
+        log.info("executeExport start {}", taskId);
+
         SysExportTask task = new SysExportTask();
         task.setId(taskId);
         task.setStatus("PROCESSING");
