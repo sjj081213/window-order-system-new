@@ -574,18 +574,26 @@ const handleReset = () => {
 
 const handleExport = async () => {
     try {
-        const response = await request.post('/dashboard/export', queryForm, {
-            responseType: 'blob'
-        })
-        const url = window.URL.createObjectURL(new Blob([response.data]))
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', '订单列表.xlsx')
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
+        const res = await request.post('/dashboard/export', queryForm)
+        if (res.code === 200) {
+             ElMessageBox.confirm(
+                '导出任务已创建，是否前往导出中心查看进度？',
+                '提示',
+                {
+                    confirmButtonText: '前往导出中心',
+                    cancelButtonText: '留在本页',
+                    type: 'success',
+                }
+            )
+            .then(() => {
+                router.push('/export-center')
+            })
+            .catch(() => {
+                // stay
+            })
+        }
     } catch (e) {
-        ElMessage.error('导出失败')
+        console.error(e)
     }
 }
 

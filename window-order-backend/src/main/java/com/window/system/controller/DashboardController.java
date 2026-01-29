@@ -1,11 +1,13 @@
 package com.window.system.controller;
 
+import cn.hutool.json.JSONUtil;
 import com.alibaba.excel.EasyExcel;
 import com.window.system.common.Result;
 import com.window.system.model.dto.DashboardStats;
 import com.window.system.model.entity.WindowOrder;
 import com.window.system.mapper.WindowOrderMapper;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,11 +20,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import com.window.system.security.AuthUser;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/dashboard")
 public class DashboardController {
@@ -43,23 +47,23 @@ public class DashboardController {
         stats.setTotalOrders(windowOrderMapper.countTotalOrders(userId, role));
         stats.setMonthlySales(windowOrderMapper.sumMonthlySales(userId, role).toString());
         stats.setMonthlyPaidAmount(windowOrderMapper.sumMonthlyPaidAmount(userId, role).toString());
-        
+
         // Charts
         stats.setOrderTrend(windowOrderMapper.getOrderTrend(userId, role));
         stats.setBrandDistribution(windowOrderMapper.getBrandDistribution(userId, role));
         stats.setSalesPerformance(windowOrderMapper.getMonthlySalesPerformance(userId, role));
-        
+
         return Result.success(stats);
     }
 
+    @Autowired
+    private com.window.system.service.SysExportTaskService sysExportTaskService;
+
     @PostMapping("/export")
-    public void export(@RequestBody OrderListReq req, HttpServletResponse response) throws IOException {
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setCharacterEncoding("utf-8");
-        String fileName = URLEncoder.encode("订单列表", StandardCharsets.UTF_8).replaceAll("\\+", "%20");
-        response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
+    public Result<String> export(@RequestBody OrderListReq req) {
+        String params = JSONUtil.toJsonStr(req);
+        sysExportTaskService.createTask("订单导出_" + System.currentTimeMillis(), "ORDER", params);
         
-        List<WindowOrder> list = windowOrderMapper.exportList(req);
-        EasyExcel.write(response.getOutputStream(), WindowOrder.class).sheet("订单").doWrite(list);
+        return Result.success("导出任务已创建，请前往【导出中心】查看进度");
     }
 }

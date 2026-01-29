@@ -94,6 +94,12 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'export-center',
+        name: 'ExportCenter',
+        component: () => import('../views/ExportCenter.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'logs',
         name: 'Logs',
         component: Logs,
