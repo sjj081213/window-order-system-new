@@ -59,13 +59,27 @@
                         <span>{{ scope.row.createByName }}</span>
                     </template>
                 </el-table-column>
-                <el-table-column prop="remark" label="备注" min-width="200" show-overflow-tooltip />
-                <el-table-column label="操作" width="100" fixed="right" align="center">
-                  <template #default="scope">
-                    <el-button type="primary" link @click="openPaymentPage(scope.row)">
-                        查看详情
-                    </el-button>
-                  </template>
+                <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
+                <el-table-column label="附件" min-width="200">
+                    <template #default="scope">
+                        <div v-if="getAttachments(scope.row).length > 0" class="attachment-list">
+                            <div v-for="url in getAttachments(scope.row)" :key="url" class="list-attachment-item">
+                                <el-image 
+                                    v-if="isImage(url)"
+                                    :src="url" 
+                                    :preview-src-list="[url]"
+                                    fit="cover"
+                                    class="list-attachment-image"
+                                    preview-teleported
+                                />
+                                <a v-else :href="url" target="_blank" class="list-attachment-link">
+                                    <el-icon><Link /></el-icon>
+                                    <span>附件</span>
+                                </a>
+                            </div>
+                        </div>
+                        <span v-else class="text-gray">-</span>
+                    </template>
                 </el-table-column>
             </el-table>
         </div>
@@ -121,7 +135,7 @@ import { useRoute, useRouter } from 'vue-router'
 import request from '@/utils/request'
 import { createPayment, listPayments } from '@/api/payment'
 import { ElMessage } from 'element-plus'
-import { Plus, UserFilled } from '@element-plus/icons-vue'
+import { Plus, UserFilled, Link } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -213,6 +227,24 @@ const submitPayment = async () => {
 const openPaymentPage = (row) => {
   if (!row || !order.value?.id) return
   router.push({ name: 'PaymentDetail', params: { id: row.id }, query: { orderId: order.value.id } })
+}
+
+const parseAttachments = (value) => {
+  if (!value) return []
+  return value.split(',').map(s => s.trim()).filter(Boolean)
+}
+
+const getAttachments = (row) => {
+  if (!row) return []
+  if (Array.isArray(row.attachmentList)) return row.attachmentList
+  if (typeof row.attachments === 'string') return parseAttachments(row.attachments)
+  return []
+}
+
+const isImage = (url) => {
+  if (!url) return false
+  const ext = url.split('.').pop().toLowerCase()
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)
 }
 
 const handleUploadSuccess = (response, file, fileList) => {
@@ -349,5 +381,38 @@ const getPayMethodTagType = (method) => {
 }
 .mr-2 {
     margin-right: 8px;
+}
+.attachment-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.list-attachment-item {
+    display: flex;
+    align-items: center;
+}
+.list-attachment-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    border: 1px solid #e4e7ed;
+    cursor: pointer;
+}
+.list-attachment-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #409EFF;
+    text-decoration: none;
+    font-size: 13px;
+    background: #ecf5ff;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+.list-attachment-link:hover {
+    color: #66b1ff;
+}
+.text-gray {
+    color: #909399;
 }
 </style>
