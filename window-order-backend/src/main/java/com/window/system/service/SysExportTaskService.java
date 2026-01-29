@@ -142,11 +142,8 @@ public class SysExportTaskService {
             // Upload to MinIO
             String dateDir = LocalDate.now().toString();
             String originalFilename = file.getName();
-            String ext = "";
-            if (originalFilename.contains(".")) {
-                ext = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String objectName = dateDir + "/" + UUID.randomUUID().toString().replace("-", "") + ext;
+            // Use original filename instead of UUID to keep meaningful names in MinIO
+            String objectName = dateDir + "/" + originalFilename;
 
             try (FileInputStream fis = new FileInputStream(file)) {
                 minioClient.putObject(
