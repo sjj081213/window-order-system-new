@@ -26,4 +26,16 @@ public class SysOperationLogController {
         List<SysOperationLog> list = sysOperationLogMapper.selectList(req);
         return Result.success(PageResponse.of(list, total));
     }
+
+    @Autowired
+    private com.window.system.service.SysExportTaskService sysExportTaskService;
+
+    @PostMapping("/export")
+    public Result<String> export(@RequestBody LogListReq req) {
+        String params = cn.hutool.json.JSONUtil.toJsonStr(req);
+        String timeStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(java.time.LocalDateTime.now());
+        sysExportTaskService.createTask("导出日志_" + timeStr + ".xlsx", "LOG", params);
+        
+        return Result.success("导出任务已创建，请前往【导出中心】查看进度");
+    }
 }

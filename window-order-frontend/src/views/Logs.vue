@@ -32,6 +32,7 @@
         <el-form-item>
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
+          <el-button type="warning" @click="handleExport">导出</el-button>
         </el-form-item>
       </el-form>
       <el-table :data="list" stripe>
@@ -61,8 +62,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { listLogs } from '../api/logs'
+import { listLogs, exportLogs } from '../api/logs'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const query = ref({
   pageNo: 1,
   pageSize: 10,
@@ -114,6 +118,29 @@ const handleReset = () => {
   }
   dateRange.value = []
   fetchList()
+}
+
+const handleExport = async () => {
+  try {
+    const res = await exportLogs(buildQuery())
+    if (res.code === 200) {
+      ElMessageBox.confirm(
+        '导出任务已创建，是否前往导出中心查看进度？',
+        '提示',
+        {
+          confirmButtonText: '前往导出中心',
+          cancelButtonText: '留在本页',
+          type: 'success',
+        }
+      )
+      .then(() => {
+        router.push('/export-center')
+      })
+      .catch(() => {})
+    }
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 onMounted(fetchList)

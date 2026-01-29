@@ -80,34 +80,29 @@ public class SysExportTaskService {
         return createTask(taskName, null, null);
     }
 
+    @Autowired
+    private com.window.system.service.export.ExportStrategyFactory exportStrategyFactory;
+
     @Async
     public void executeTask(Long taskId, String exportType, String exportParams) {
-        if ("ORDER".equals(exportType)) {
-            // Handle order export
-             this.executeExport(taskId, () -> {
+        com.window.system.service.export.ExportStrategy strategy = exportStrategyFactory.getStrategy(exportType);
+        if (strategy != null) {
+            this.executeExport(taskId, () -> {
                 try {
-                    OrderListReq req = JSONUtil.toBean(exportParams, com.window.system.model.req.OrderListReq.class);
-                    // Use task name as filename if it ends with .xlsx, otherwise append it
-                    SysExportTask task = sysExportTaskMapper.getById(taskId);
-                    String fileName = task.getTaskName();
-                    if (!fileName.endsWith(".xlsx")) {
-                        fileName += ".xlsx";
-                    }
-                    
-                    File temp = File.createTempFile("export_", ".xlsx");
-                    List<com.window.system.model.entity.WindowOrder> list = windowOrderMapper.exportList(req);
-                    com.alibaba.excel.EasyExcel.write(temp, com.window.system.model.entity.WindowOrder.class).sheet("订单").doWrite(list);
-                    
-                    // Rename temp file to match task name for upload
-                    File finalFile = new File(temp.getParent(), fileName);
-                    if (temp.renameTo(finalFile)) {
-                        return finalFile;
-                    }
-                    return temp;
+                    return strategy.export(exportParams, taskId);
                 } catch (Exception e) {
-                    throw new RuntimeException("Order export failed", e);
+                    throw new RuntimeException("Export failed: " + e.getMessage(), e);
                 }
             });
+        } else {
+            log.error("Unknown export type: {}", exportType);
+            // Mark task as failed
+            SysExportTask task = new SysExportTask();
+            task.setId(taskId);
+            task.setStatus("FAILED");
+            task.setErrorMsg("Unknown export type: " + exportType);
+            task.setFinishTime(LocalDateTime.now());
+            sysExportTaskMapper.update(task);
         }
     }
 
