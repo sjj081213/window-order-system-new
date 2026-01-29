@@ -5,6 +5,7 @@ import com.window.system.config.MinioConfig;
 import com.window.system.mapper.SysExportTaskMapper;
 import com.window.system.model.entity.SysExportTask;
 import com.window.system.security.AuthUser;
+import com.window.system.service.export.ExportStrategy;
 import com.window.system.service.export.ExportStrategyFactory;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
@@ -73,7 +74,7 @@ public class SysExportTaskService {
 
     @Async("taskExportExecutor")
     public void executeTask(Long taskId, String exportType, String exportParams) {
-        com.window.system.service.export.ExportStrategy strategy = exportStrategyFactory.getStrategy(exportType);
+        ExportStrategy strategy = exportStrategyFactory.getStrategy(exportType);
         if (strategy != null) {
             this.executeExport(taskId, () -> {
                 try {
