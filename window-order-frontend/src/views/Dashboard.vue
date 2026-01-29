@@ -423,7 +423,7 @@ onMounted(async () => {
 }
 
 .greeting-title {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
   color: #1e293b;
   margin: 0;
@@ -451,7 +451,7 @@ onMounted(async () => {
 .greeting-subtitle {
   color: #64748b;
   margin: 8px 0 0;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .hero-actions {
@@ -500,13 +500,13 @@ onMounted(async () => {
 }
 
 .card-icon-wrapper {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 28px;
   flex-shrink: 0;
 }
 
@@ -517,14 +517,14 @@ onMounted(async () => {
 
 .card-label {
   color: #64748b;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   margin-bottom: 4px;
 }
 
 .card-value {
   color: #1e293b;
-  font-size: 28px;
+  font-size: 36px;
   font-weight: 800;
   line-height: 1.2;
   letter-spacing: -0.5px;
@@ -539,7 +539,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: 14px;
   margin-top: 8px;
   opacity: 0.8;
   font-weight: 500;
@@ -600,7 +600,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: #1e293b;
 }
@@ -622,8 +622,8 @@ onMounted(async () => {
 
 /* Rank Table */
 .rank-badge {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: #f1f5f9;
   color: #64748b;
@@ -631,7 +631,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .rank-1 { background: #fff7ed; color: #f59e0b; border: 1px solid #fcd34d; }
@@ -672,13 +672,13 @@ onMounted(async () => {
 }
 
 .quick-icon-box {
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 26px;
 }
 
 .quick-icon-box.blue { background: #eff6ff; color: #3b82f6; }
@@ -687,7 +687,7 @@ onMounted(async () => {
 .quick-icon-box.orange { background: #fff7ed; color: #f97316; }
 
 .quick-btn span {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #475569;
 }
