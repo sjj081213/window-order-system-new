@@ -1,296 +1,247 @@
 <template>
   <div class="dashboard-page">
-    <div class="hero">
-      <div class="hero-left">
-        <div class="hero-title">
-          <el-icon><DataBoard /></el-icon>
-          <span>数据驾驶舱</span>
+    <!-- Hero Section -->
+    <div class="hero-section">
+      <div class="hero-content">
+        <div class="hero-greeting">
+          <h1 class="greeting-title">
+            Hi, {{ displayName }} 
+            <span class="greeting-emoji">👋</span>
+          </h1>
+          <p class="greeting-subtitle">
+            今天是 {{ todayText }}，祝你工作愉快！
+          </p>
         </div>
-        <div class="hero-subtitle">欢迎回来，{{ displayName }} · {{ todayText }}</div>
+        <div class="hero-weather">
+          <!-- 装饰性元素 -->
+          <div class="weather-badge">
+            <el-icon><Sunny /></el-icon>
+            <span>晴朗</span>
+          </div>
+        </div>
       </div>
       <div class="hero-actions">
-        <el-button type="primary" class="hero-primary" @click="go('/orders')">
+        <el-button type="primary" size="large" class="action-btn" @click="go('/orders')" round>
+          <el-icon><List /></el-icon>
           管理订单
-          <el-icon class="btn-icon"><ArrowRight /></el-icon>
         </el-button>
-        <el-button @click="go('/customers')">客户档案</el-button>
-        <el-button v-if="isAdmin" @click="go('/users')">账号管理</el-button>
+        <el-button size="large" class="action-btn glass-btn" @click="go('/customers')" round>
+          <el-icon><User /></el-icon>
+          客户档案
+        </el-button>
       </div>
     </div>
 
-    <div v-if="loading" class="loading-skeleton">
-      <el-row :gutter="18">
-        <el-col v-for="i in 5" :key="i" :xs="24" :sm="12" :md="6">
-          <el-skeleton animated>
-            <template #template>
-              <el-skeleton-item variant="rect" style="height: 128px; border-radius: 16px;" />
-            </template>
-          </el-skeleton>
-        </el-col>
-      </el-row>
-      <el-row :gutter="18" style="margin-top: 18px;">
-        <el-col :xs="24" :lg="14">
-          <el-skeleton animated>
-            <template #template>
-              <el-skeleton-item variant="rect" style="height: 380px; border-radius: 16px;" />
-            </template>
-          </el-skeleton>
-        </el-col>
-        <el-col :xs="24" :lg="10" style="margin-top: 18px;">
-          <el-skeleton animated>
-            <template #template>
-              <el-skeleton-item variant="rect" style="height: 380px; border-radius: 16px;" />
-            </template>
-          </el-skeleton>
-        </el-col>
-      </el-row>
+    <div v-if="loading" class="loading-container">
+      <el-skeleton animated :rows="10" />
     </div>
 
-    <template v-else>
-      <el-row :gutter="18" class="kpi-row">
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card shadow="never" class="kpi-card kpi-pending">
-            <div class="kpi-inner">
-              <div class="kpi-icon">
-                <el-icon><Clock /></el-icon>
-              </div>
-              <div class="kpi-meta">
-                <div class="kpi-title">待处理订单</div>
-                <div class="kpi-value">{{ formatNumber(stats.pendingOrders) }}</div>
-                <div class="kpi-foot">需要跟进</div>
-              </div>
-              <el-tag class="kpi-tag" type="warning" effect="dark">Pending</el-tag>
+    <div v-else class="dashboard-content">
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <!-- 待处理订单 -->
+        <div class="kpi-card orange-theme">
+          <div class="card-icon-wrapper">
+            <el-icon><Timer /></el-icon>
+          </div>
+          <div class="card-info">
+            <div class="card-label">待处理订单</div>
+            <div class="card-value">{{ formatNumber(stats.pendingOrders) }}</div>
+            <div class="card-trend">
+              <span>需要跟进</span>
+              <el-icon><ArrowRight /></el-icon>
             </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card shadow="never" class="kpi-card kpi-finished">
-            <div class="kpi-inner">
-              <div class="kpi-icon">
-                <el-icon><CircleCheck /></el-icon>
-              </div>
-              <div class="kpi-meta">
-                <div class="kpi-title">已完成订单</div>
-                <div class="kpi-value">{{ formatNumber(stats.finishedOrders) }}</div>
-                <div class="kpi-foot">交付成功</div>
-              </div>
-              <el-tag class="kpi-tag" type="success" effect="dark">Finished</el-tag>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card shadow="never" class="kpi-card kpi-total">
-            <div class="kpi-inner">
-              <div class="kpi-icon">
-                <el-icon><DataAnalysis /></el-icon>
-              </div>
-              <div class="kpi-meta">
-                <div class="kpi-title">总订单数</div>
-                <div class="kpi-value">{{ formatNumber(stats.totalOrders) }}</div>
-                <div class="kpi-foot">累计沉淀</div>
-              </div>
-              <el-tag class="kpi-tag" type="info" effect="dark">Total</el-tag>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card shadow="never" class="kpi-card kpi-money">
-            <div class="kpi-inner">
-              <div class="kpi-icon">
-                <el-icon><Coin /></el-icon>
-              </div>
-              <div class="kpi-meta">
-                <div class="kpi-title">本月销售额</div>
-                <div class="kpi-value money">{{ formatMoney(stats.monthlySales) }}</div>
-                <div class="kpi-foot">合同金额</div>
-              </div>
-              <el-tag class="kpi-tag" type="danger" effect="dark">Monthly</el-tag>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card shadow="never" class="kpi-card kpi-paid">
-            <div class="kpi-inner">
-              <div class="kpi-icon">
-                <el-icon><CreditCard /></el-icon>
-              </div>
-              <div class="kpi-meta">
-                <div class="kpi-title">本月已支付金额</div>
-                <div class="kpi-value money">{{ formatMoney(stats.monthlyPaidAmount) }}</div>
-                <div class="kpi-foot">实收金额</div>
-              </div>
-              <el-tag class="kpi-tag" type="success" effect="dark">Paid</el-tag>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+          </div>
+          <div class="card-bg-icon">
+            <el-icon><Timer /></el-icon>
+          </div>
+        </div>
 
-      <el-row :gutter="18" class="grid-row">
-        <el-col :xs="24" :lg="14">
-          <el-card shadow="never" class="panel-card">
-            <template #header>
-              <div class="panel-header">
-                <div class="panel-title">
-                  <el-icon><DataLine /></el-icon>
-                  <span>近7日订单趋势</span>
-                </div>
-                <div class="panel-hint">订单数变化</div>
-              </div>
-            </template>
-            <div class="chart-container">
-              <el-empty v-if="!stats.orderTrend?.length" description="暂无数据" />
-              <v-chart v-else class="chart" :option="lineOption" autoresize />
+        <!-- 已完成订单 -->
+        <div class="kpi-card green-theme">
+          <div class="card-icon-wrapper">
+            <el-icon><CircleCheckFilled /></el-icon>
+          </div>
+          <div class="card-info">
+            <div class="card-label">已完成订单</div>
+            <div class="card-value">{{ formatNumber(stats.finishedOrders) }}</div>
+            <div class="card-trend">
+              <span>交付成功</span>
+              <el-icon><ArrowRight /></el-icon>
             </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :lg="10" class="grid-col-right">
-          <el-card shadow="never" class="panel-card">
-            <template #header>
-              <div class="panel-header">
-                <div class="panel-title">
-                  <el-icon><PieChartIcon /></el-icon>
-                  <span>品牌分布</span>
-                </div>
-                <div class="panel-hint">占比结构</div>
-              </div>
-            </template>
-            <div class="chart-container">
-              <el-empty v-if="!stats.brandDistribution?.length" description="暂无数据" />
-              <v-chart v-else class="chart" :option="pieOption" autoresize />
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+          </div>
+          <div class="card-bg-icon">
+            <el-icon><CircleCheckFilled /></el-icon>
+          </div>
+        </div>
 
-      <el-row :gutter="18" class="grid-row">
-        <el-col :xs="24" :lg="16">
-          <el-card shadow="never" class="panel-card">
-            <template #header>
-              <div class="panel-header">
-                <div class="panel-title">
-                  <el-icon><Trophy /></el-icon>
-                  <span>本月销售人员业绩排行</span>
-                </div>
-                <div class="panel-hint">Top Sales</div>
-              </div>
-            </template>
-            <el-table :data="stats.salesPerformance" size="small" stripe class="rank-table">
-              <el-table-column type="index" label="#" width="56" />
-              <el-table-column prop="name" label="销售员" min-width="140" />
-              <el-table-column prop="orderCount" label="订单数" min-width="100" />
-              <el-table-column label="销售额" min-width="160">
-                <template #default="scope">
-                  <span class="money-text">{{ formatMoney(scope.row.amount) }}</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="进度" min-width="220">
-                <template #default="scope">
-                  <el-progress
-                    :percentage="salesPercent(scope.row.amount)"
-                    :stroke-width="8"
-                    :show-text="false"
-                  />
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :lg="8" class="grid-col-right">
-          <el-card shadow="never" class="panel-card quick-card">
-            <template #header>
-              <div class="panel-header">
-                <div class="panel-title">
-                  <el-icon><Guide /></el-icon>
-                  <span>快捷入口</span>
-                </div>
-                <div class="panel-hint">Quick Actions</div>
-              </div>
-            </template>
-            <div class="quick-list">
-              <div class="quick-item" @click="go('/orders')">
-                <div class="quick-icon">
-                  <el-icon><List /></el-icon>
-                </div>
-                <div class="quick-text">
-                  <div class="quick-title">订单管理</div>
-                  <div class="quick-desc">新增、跟进、查询订单</div>
-                </div>
-                <el-icon class="quick-arrow"><ArrowRight /></el-icon>
-              </div>
-              <div class="quick-item" @click="go('/customers')">
-                <div class="quick-icon">
-                  <el-icon><UserFilled /></el-icon>
-                </div>
-                <div class="quick-text">
-                  <div class="quick-title">客户档案</div>
-                  <div class="quick-desc">客户信息与历史订单</div>
-                </div>
-                <el-icon class="quick-arrow"><ArrowRight /></el-icon>
-              </div>
-              <div
-                v-if="isInstallerOrAdmin"
-                class="quick-item"
-                @click="go('/remeasure-tasks')"
-              >
-                <div class="quick-icon">
-                  <el-icon><Tools /></el-icon>
-                </div>
-                <div class="quick-text">
-                  <div class="quick-title">复尺任务</div>
-                  <div class="quick-desc">任务列表与进度跟踪</div>
-                </div>
-                <el-icon class="quick-arrow"><ArrowRight /></el-icon>
-              </div>
-              <div class="quick-item" @click="go('/after-sales')">
-                <div class="quick-icon">
-                  <el-icon><Service /></el-icon>
-                </div>
-                <div class="quick-text">
-                  <div class="quick-title">售后工单</div>
-                  <div class="quick-desc">工单流转与处理记录</div>
-                </div>
-                <el-icon class="quick-arrow"><ArrowRight /></el-icon>
-              </div>
+        <!-- 本月销售额 -->
+        <div class="kpi-card purple-theme">
+          <div class="card-icon-wrapper">
+            <el-icon><Money /></el-icon>
+          </div>
+          <div class="card-info">
+            <div class="card-label">本月销售额</div>
+            <div class="card-value money">{{ formatMoney(stats.monthlySales) }}</div>
+            <div class="card-trend">
+              <span>本月业绩</span>
+              <el-icon><TrendCharts /></el-icon>
             </div>
-          </el-card>
-        </el-col>
-      </el-row>
-    </template>
+          </div>
+          <div class="card-bg-icon">
+            <el-icon><Money /></el-icon>
+          </div>
+        </div>
+
+        <!-- 总订单数 -->
+        <div class="kpi-card blue-theme">
+          <div class="card-icon-wrapper">
+            <el-icon><DataLine /></el-icon>
+          </div>
+          <div class="card-info">
+            <div class="card-label">总订单数</div>
+            <div class="card-value">{{ formatNumber(stats.totalOrders) }}</div>
+            <div class="card-trend">
+              <span>历史累计</span>
+              <el-icon><ArrowRight /></el-icon>
+            </div>
+          </div>
+          <div class="card-bg-icon">
+            <el-icon><DataLine /></el-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="charts-grid">
+        <!-- Line Chart -->
+        <div class="chart-card main-chart">
+          <div class="card-header">
+            <div class="header-title">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>近7日订单趋势</span>
+            </div>
+            <el-tag size="small" effect="plain" round>最近一周</el-tag>
+          </div>
+          <div class="chart-body">
+            <v-chart class="echart-instance" :option="lineOption" autoresize />
+          </div>
+        </div>
+
+        <!-- Pie Chart -->
+        <div class="chart-card sub-chart">
+          <div class="card-header">
+            <div class="header-title">
+              <el-icon><PieChartIcon /></el-icon>
+              <span>品牌分布</span>
+            </div>
+          </div>
+          <div class="chart-body">
+            <v-chart class="echart-instance" :option="pieOption" autoresize />
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Section -->
+      <div class="bottom-grid">
+        <!-- Ranking Table -->
+        <div class="chart-card rank-card">
+          <div class="card-header">
+            <div class="header-title">
+              <el-icon><Trophy /></el-icon>
+              <span>本月销售龙虎榜</span>
+            </div>
+          </div>
+          <div class="rank-list">
+             <el-table :data="stats.salesPerformance" :show-header="true" style="width: 100%">
+                <el-table-column type="index" label="排名" width="80">
+                  <template #default="scope">
+                    <div class="rank-badge" :class="'rank-' + (scope.$index + 1)">
+                      {{ scope.$index + 1 }}
+                    </div>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="name" label="销售员" />
+                <el-table-column prop="orderCount" label="订单数" align="center" />
+                <el-table-column prop="amount" label="销售额" align="right">
+                  <template #default="scope">
+                    <span class="money-font">{{ formatMoney(scope.row.amount) }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="占比" width="180">
+                  <template #default="scope">
+                     <el-progress 
+                        :percentage="salesPercent(scope.row.amount)" 
+                        :stroke-width="8" 
+                        :color="getProgressColor(scope.$index)"
+                        :show-text="false"
+                      />
+                  </template>
+                </el-table-column>
+             </el-table>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="chart-card quick-card">
+          <div class="card-header">
+            <div class="header-title">
+              <el-icon><Lightning /></el-icon>
+              <span>快捷入口</span>
+            </div>
+          </div>
+          <div class="quick-actions-grid">
+             <div class="quick-btn" @click="go('/orders')">
+                <div class="quick-icon-box blue">
+                   <el-icon><DocumentAdd /></el-icon>
+                </div>
+                <span>新增订单</span>
+             </div>
+             <div class="quick-btn" @click="go('/customers')">
+                <div class="quick-icon-box green">
+                   <el-icon><UserFilled /></el-icon>
+                </div>
+                <span>添加客户</span>
+             </div>
+             <div class="quick-btn" @click="go('/sales-targets')" v-if="isAdmin">
+                <div class="quick-icon-box purple">
+                   <el-icon><Aim /></el-icon>
+                </div>
+                <span>设定目标</span>
+             </div>
+             <div class="quick-btn" @click="go('/export-center')">
+                <div class="quick-icon-box orange">
+                   <el-icon><Download /></el-icon>
+                </div>
+                <span>导出中心</span>
+             </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { getDashboardStats } from '../api/order'
-import { useUserStore } from '../stores/user'
+import { getDashboardStats } from '@/api/order'
+import { useUserStore } from '@/stores/user'
+import { useRouter } from 'vue-router'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart, PieChart, LineChart } from 'echarts/charts'
-import { useRouter } from 'vue-router'
-import {
-  ArrowRight,
-  CircleCheck,
-  Clock,
-  Coin,
-  CreditCard,
-  DataAnalysis,
-  DataBoard,
-  DataLine,
-  Guide,
-  List,
-  PieChart as PieChartIcon,
-  Service,
-  Tools,
-  Trophy,
-  UserFilled
-} from '@element-plus/icons-vue'
 import {
   GridComponent,
   TooltipComponent,
   LegendComponent,
   TitleComponent
 } from 'echarts/components'
+import {
+  Sunny, List, User, Timer, CircleCheckFilled, Money, DataLine,
+  ArrowRight, TrendCharts, DataAnalysis, PieChart as PieChartIcon,
+  Trophy, Lightning, DocumentAdd, UserFilled, Aim, Download
+} from '@element-plus/icons-vue'
 
 use([
   CanvasRenderer,
@@ -309,36 +260,29 @@ const loading = ref(true)
 
 const displayName = computed(() => {
   const user = userStore.currentUser || {}
-  return user.realName || user.username || ''
+  return user.realName || user.username || 'User'
 })
 
 const todayText = computed(() => {
-  return new Date().toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    weekday: 'short'
-  })
+  const date = new Date()
+  const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }
+  return date.toLocaleDateString('zh-CN', options)
 })
 
 const isAdmin = computed(() => userStore.currentUser?.role === 'ADMIN')
-const isInstallerOrAdmin = computed(() => {
-  const role = userStore.currentUser?.role
-  return role === 'INSTALLER' || role === 'ADMIN'
-})
 
 const go = (path) => {
   router.push(path)
 }
 
-const formatNumber = (value) => {
-  const num = Number(value || 0)
-  return num.toLocaleString('zh-CN')
+const formatNumber = (val) => {
+  if (!val) return '0'
+  return Number(val).toLocaleString()
 }
 
-const formatMoney = (value) => {
-  const num = Number(value || 0)
-  return `¥ ${num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const formatMoney = (val) => {
+  if (!val) return '¥ 0.00'
+  return '¥ ' + Number(val).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 const stats = ref({
@@ -348,427 +292,403 @@ const stats = ref({
     monthlySales: 0,
     monthlyPaidAmount: 0,
     orderTrend: [],
-    brandDistribution: []
-    , salesPerformance: []
+    brandDistribution: [],
+    salesPerformance: []
 })
 
 const lineOption = ref({})
 const pieOption = ref({})
 
-onMounted(async () => {
-    try {
-        const res = await getDashboardStats()
-        if (res.code === 200) {
-            stats.value = res.data
-            initCharts()
-        }
-    } catch (e) {
-        console.error(e)
-    } finally {
-        loading.value = false
-    }
-})
-
 const salesMaxAmount = computed(() => {
   const amounts = (stats.value.salesPerformance || []).map(item => Number(item.amount || 0))
-  return Math.max(0, ...amounts)
+  return Math.max(1, ...amounts) // 避免除以0
 })
 
 const salesPercent = (amount) => {
-  const max = salesMaxAmount.value
-  if (!max) return 0
-  const value = Number(amount || 0)
-  const percent = (value / max) * 100
-  return Math.max(0, Math.min(100, Math.round(percent)))
+  const val = Number(amount || 0)
+  return Math.min(100, Math.round((val / salesMaxAmount.value) * 100))
+}
+
+const getProgressColor = (index) => {
+  const colors = ['#f59e0b', '#8b5cf6', '#3b82f6', '#10b981']
+  return colors[index] || '#9ca3af'
 }
 
 const initCharts = () => {
-    // Line Chart
-    const trendDates = stats.value.orderTrend.map(item => item.date)
-    const trendCounts = stats.value.orderTrend.map(item => item.count)
-    
-    lineOption.value = {
-        tooltip: {
-            trigger: 'axis'
-        },
-        textStyle: {
-            fontFamily: 'Inter, Segoe UI, system-ui, -apple-system, BlinkMacSystemFont, sans-serif'
-        },
-        grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '3%',
-            containLabel: true
-        },
-        xAxis: {
-            type: 'category',
-            boundaryGap: false,
-            data: trendDates,
-            axisLine: { lineStyle: { color: 'rgba(0,0,0,0.15)' } },
-            axisTick: { show: false },
-            axisLabel: { color: 'rgba(0,0,0,0.55)' }
-        },
-        yAxis: {
-            type: 'value',
-            splitLine: { lineStyle: { color: 'rgba(0,0,0,0.06)' } },
-            axisLabel: { color: 'rgba(0,0,0,0.55)' }
-        },
-        series: [
-            {
-                name: '订单数',
-                type: 'line',
-                smooth: true,
-                showSymbol: false,
-                areaStyle: {
-                    color: {
-                        type: 'linear',
-                        x: 0, y: 0, x2: 0, y2: 1,
-                        colorStops: [
-                            { offset: 0, color: 'rgba(99,102,241,0.35)' },
-                            { offset: 1, color: 'rgba(99,102,241,0.01)' }
-                        ]
-                    }
-                },
-                lineStyle: { width: 3, color: '#6366F1' },
-                itemStyle: { color: '#6366F1' },
-                data: trendCounts
-            }
-        ]
-    }
-    
-    // Pie Chart
-    pieOption.value = {
-        tooltip: {
-            trigger: 'item'
-        },
-        legend: {
-            orient: 'vertical',
-            left: 'left',
-            textStyle: { color: 'rgba(0,0,0,0.65)' }
-        },
-        series: [
-            {
-                name: '品牌',
-                type: 'pie',
-                radius: ['40%', '70%'],
-                avoidLabelOverlap: false,
-                itemStyle: {
-                    borderRadius: 10,
-                    borderColor: 'rgba(255,255,255,0.85)',
-                    borderWidth: 2
-                },
-                label: {
-                    show: false,
-                    position: 'center'
-                },
-                emphasis: {
-                    label: {
-                        show: true,
-                        fontSize: 20,
-                        fontWeight: 'bold'
-                    }
-                },
-                labelLine: {
-                    show: false
-                },
-                data: stats.value.brandDistribution
-            }
-        ]
-    }
+  // 折线图配置
+  const dates = stats.value.orderTrend.map(i => i.date)
+  const values = stats.value.orderTrend.map(i => i.count)
+  
+  lineOption.value = {
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+      borderColor: '#e5e7eb',
+      textStyle: { color: '#374151' },
+      axisPointer: {
+        lineStyle: {
+          color: '#6366f1',
+          width: 2,
+          type: 'dashed'
+        }
+      }
+    },
+    grid: { left: '2%', right: '2%', top: '10%', bottom: '5%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: dates,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: '#9ca3af', margin: 15 }
+    },
+    yAxis: {
+      type: 'value',
+      splitLine: { lineStyle: { type: 'dashed', color: '#f3f4f6' } },
+      axisLabel: { show: false }
+    },
+    series: [{
+      data: values,
+      type: 'line',
+      smooth: true,
+      symbolSize: 8,
+      itemStyle: { color: '#6366f1', borderWidth: 2, borderColor: '#fff' },
+      lineStyle: { width: 4, shadowColor: 'rgba(99, 102, 241, 0.3)', shadowBlur: 10 },
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: 'rgba(99, 102, 241, 0.2)' },
+            { offset: 1, color: 'rgba(99, 102, 241, 0)' }
+          ]
+        }
+      }
+    }]
+  }
+
+  // 饼图配置
+  pieOption.value = {
+    tooltip: { trigger: 'item' },
+    legend: { bottom: '0%', icon: 'circle', itemWidth: 8, itemHeight: 8 },
+    series: [{
+      name: '品牌分布',
+      type: 'pie',
+      radius: ['40%', '70%'],
+      center: ['50%', '45%'],
+      itemStyle: {
+        borderRadius: 8,
+        borderColor: '#fff',
+        borderWidth: 2
+      },
+      label: { show: false },
+      data: stats.value.brandDistribution,
+      emphasis: {
+        itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.2)' }
+      }
+    }]
+  }
 }
+
+onMounted(async () => {
+  try {
+    const res = await getDashboardStats()
+    if (res.code === 200) {
+      stats.value = res.data
+      initCharts()
+    }
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style scoped>
 .dashboard-page {
-  position: relative;
-  min-height: 100%;
-  padding: 18px;
-  border-radius: 18px;
-  overflow: hidden;
-  background: radial-gradient(1200px 600px at 10% 0%, rgba(99, 102, 241, 0.22), rgba(99, 102, 241, 0) 60%),
-    radial-gradient(1000px 500px at 90% 10%, rgba(16, 185, 129, 0.18), rgba(16, 185, 129, 0) 55%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.35));
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  padding: 24px;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
 }
 
-.dashboard-page::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px);
-  background-size: 18px 18px;
-  opacity: 0.35;
-  pointer-events: none;
+/* Hero Section */
+.hero-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
 }
 
-.hero {
-  position: relative;
+.greeting-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px 14px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(17, 24, 39, 0.92), rgba(17, 24, 39, 0.74));
-  box-shadow: 0 16px 40px rgba(17, 24, 39, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  gap: 12px;
 }
 
-.hero-left {
-  min-width: 0;
+.greeting-emoji {
+  animation: wave 2.5s infinite;
+  display: inline-block;
 }
 
-.hero-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  color: rgba(255, 255, 255, 0.92);
+@keyframes wave {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+  60% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
 }
 
-.hero-subtitle {
-  margin-top: 6px;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.68);
+.greeting-subtitle {
+  color: #64748b;
+  margin: 8px 0 0;
+  font-size: 15px;
 }
 
 .hero-actions {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
+  gap: 12px;
 }
 
-.hero-primary :deep(.el-button__content) {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.glass-btn {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  color: #475569;
 }
 
-.btn-icon {
-  margin-left: 2px;
+.glass-btn:hover {
+  background: white;
+  color: #6366f1;
+  border-color: #6366f1;
 }
 
-.loading-skeleton {
-  position: relative;
-  margin-top: 18px;
-}
-
-.kpi-row,
-.grid-row {
-  position: relative;
-  margin-top: 18px;
-}
-
-.kpi-row {
-  row-gap: 18px;
-}
-
-.kpi-card,
-.panel-card {
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.75);
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 12px 30px rgba(17, 24, 39, 0.08);
+/* KPI Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
 }
 
 .kpi-card {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  position: relative;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 20px rgba(148, 163, 184, 0.08);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(241, 245, 249, 1);
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
 .kpi-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 18px 42px rgba(17, 24, 39, 0.12);
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(148, 163, 184, 0.15);
 }
 
-.kpi-inner {
+.card-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.kpi-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #111827;
-  background: rgba(17, 24, 39, 0.06);
+  font-size: 24px;
+  flex-shrink: 0;
 }
 
-.kpi-meta {
+.card-info {
   flex: 1;
-  min-width: 0;
+  z-index: 2;
 }
 
-.kpi-title {
-  font-size: 13px;
-  color: rgba(17, 24, 39, 0.6);
+.card-label {
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
 }
 
-.kpi-value {
-  margin-top: 6px;
+.card-value {
+  color: #1e293b;
   font-size: 28px;
   font-weight: 800;
-  color: rgba(17, 24, 39, 0.92);
-  letter-spacing: 0.2px;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
 }
 
-.kpi-value.money {
+.card-value.money {
+  color: #0f172a;
+  font-family: 'Inter', sans-serif;
+}
+
+.card-trend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  margin-top: 8px;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+.card-bg-icon {
+  position: absolute;
+  right: -20px;
+  bottom: -20px;
+  font-size: 120px;
+  opacity: 0.06;
+  transform: rotate(-15deg);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Themes */
+.orange-theme .card-icon-wrapper { background: #fff7ed; color: #f97316; }
+.orange-theme .card-trend { color: #f97316; }
+
+.green-theme .card-icon-wrapper { background: #f0fdf4; color: #10b981; }
+.green-theme .card-trend { color: #10b981; }
+
+.purple-theme .card-icon-wrapper { background: #f5f3ff; color: #8b5cf6; }
+.purple-theme .card-trend { color: #8b5cf6; }
+
+.blue-theme .card-icon-wrapper { background: #eff6ff; color: #3b82f6; }
+.blue-theme .card-trend { color: #3b82f6; }
+
+/* Charts Grid */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+  .charts-grid { grid-template-columns: 1fr; }
+}
+
+.chart-card {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(241, 245, 249, 1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.chart-body {
+  height: 320px;
+}
+
+/* Bottom Grid */
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 1024px) {
+  .bottom-grid { grid-template-columns: 1fr; }
+}
+
+/* Rank Table */
+.rank-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.rank-1 { background: #fff7ed; color: #f59e0b; border: 1px solid #fcd34d; }
+.rank-2 { background: #f8fafc; color: #94a3b8; border: 1px solid #cbd5e1; }
+.rank-3 { background: #fff1f2; color: #f43f5e; border: 1px solid #fda4af; }
+
+.money-font {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* Quick Actions */
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.quick-btn {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.quick-btn:hover {
+  background: white;
+  border-color: #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.quick-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 22px;
 }
 
-.kpi-foot {
-  margin-top: 6px;
-  font-size: 12px;
-  color: rgba(17, 24, 39, 0.46);
-}
+.quick-icon-box.blue { background: #eff6ff; color: #3b82f6; }
+.quick-icon-box.green { background: #f0fdf4; color: #10b981; }
+.quick-icon-box.purple { background: #f5f3ff; color: #8b5cf6; }
+.quick-icon-box.orange { background: #fff7ed; color: #f97316; }
 
-.kpi-tag {
-  align-self: flex-start;
-  border: none;
-}
-
-.kpi-pending .kpi-icon {
-  background: rgba(245, 158, 11, 0.14);
-  color: #b45309;
-}
-
-.kpi-finished .kpi-icon {
-  background: rgba(16, 185, 129, 0.14);
-  color: #047857;
-}
-
-.kpi-total .kpi-icon {
-  background: rgba(99, 102, 241, 0.14);
-  color: #4338ca;
-}
-
-.kpi-money .kpi-icon {
-  background: rgba(239, 68, 68, 0.14);
-  color: #b91c1c;
-}
-
-.kpi-paid .kpi-icon {
-  background: rgba(16, 185, 129, 0.14);
-  color: #047857;
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.panel-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  color: rgba(17, 24, 39, 0.9);
-}
-
-.panel-hint {
-  font-size: 12px;
-  color: rgba(17, 24, 39, 0.45);
-}
-
-.chart-container {
-  height: 300px;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.chart {
-  height: 100%;
-  width: 100%;
-}
-
-.grid-col-right {
-  margin-top: 18px;
-}
-
-@media (min-width: 1200px) {
-  .grid-col-right {
-    margin-top: 0;
-  }
-}
-
-.money-text {
-  font-weight: 700;
-  color: rgba(17, 24, 39, 0.9);
-}
-
-.rank-table :deep(.el-progress-bar__outer) {
-  background: rgba(17, 24, 39, 0.08);
-}
-
-.rank-table :deep(.el-progress-bar__inner) {
-  background: linear-gradient(90deg, #6366f1, #10b981);
-}
-
-.quick-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.quick-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(17, 24, 39, 0.04);
-  border: 1px solid rgba(17, 24, 39, 0.06);
-  cursor: pointer;
-  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
-}
-
-.quick-item:hover {
-  transform: translateY(-2px);
-  background: rgba(17, 24, 39, 0.06);
-  border-color: rgba(99, 102, 241, 0.35);
-}
-
-.quick-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(99, 102, 241, 0.12);
-  color: #4338ca;
-}
-
-.quick-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.quick-title {
-  font-weight: 700;
-  color: rgba(17, 24, 39, 0.9);
-}
-
-.quick-desc {
-  margin-top: 2px;
-  font-size: 12px;
-  color: rgba(17, 24, 39, 0.5);
-}
-
-.quick-arrow {
-  color: rgba(17, 24, 39, 0.45);
+.quick-btn span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
 }
 </style>
