@@ -11,6 +11,7 @@ import Logs from '../views/Logs.vue'
 import AfterSalesList from '../views/AfterSalesList.vue'
 import CustomerList from '../views/CustomerList.vue'
 import RemeasureTaskList from '../views/RemeasureTaskList.vue'
+import SalesTargetList from '../views/SalesTargetList.vue'
 import MainLayout from '../layout/MainLayout.vue'
 import PaymentDetail from '../views/PaymentDetail.vue'
 
@@ -84,6 +85,12 @@ const routes = [
         path: 'remeasure-tasks',
         name: 'RemeasureTaskList',
         component: RemeasureTaskList,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'sales-targets',
+        name: 'SalesTargetList',
+        component: SalesTargetList,
         meta: { requiresAuth: true }
       },
       {

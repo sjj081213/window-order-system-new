@@ -23,6 +23,11 @@
         <template #title>订单管理</template>
       </el-menu-item>
 
+      <el-menu-item index="/sales-targets" v-if="userStore.currentUser.role === 'ADMIN' || userStore.currentUser.role === 'SALES'">
+        <el-icon><Trophy /></el-icon>
+        <template #title>销售目标</template>
+      </el-menu-item>
+
       <el-menu-item
         index="/remeasure-tasks"
         v-if="
