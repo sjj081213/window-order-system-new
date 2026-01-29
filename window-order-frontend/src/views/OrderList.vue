@@ -67,7 +67,7 @@
                   </el-select>
                 </el-form-item>
              </el-col>
-             <el-col :span="userStore.currentUser.role === 'ADMIN' ? 12 : 18" class="text-right">
+             <el-col :span="userStore.currentUser.role === 'ADMIN' ? 6 : (userStore.currentUser.role === 'SALES' ? 12 : 18)" class="text-right">
                 <el-form-item class="search-actions">
                   <el-button type="primary" @click="handleSearch" :icon="Search">查询</el-button>
                   <el-button @click="handleReset" :icon="Refresh">重置</el-button>
@@ -119,11 +119,19 @@
                <el-tag v-else type="success" effect="plain">已提交</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="生产进度" width="100">
+          <el-table-column label="制作进度" width="100">
             <template #default="scope">
                <el-tag size="small" :type="getProgressType(scope.row.productionProgress)" effect="light">
                   {{ getProgressLabel(scope.row.productionProgress) }}
                 </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="物流状态" width="100">
+            <template #default="scope">
+               <el-tag v-if="scope.row.logisticsStatus" size="small" :type="getLogisticsStatusType(scope.row.logisticsStatus)" effect="light">
+                  {{ getLogisticsStatusLabel(scope.row.logisticsStatus) }}
+                </el-tag>
+                <span v-else class="text-placeholder">-</span>
             </template>
           </el-table-column>
           <el-table-column label="安装进度" width="100">
@@ -296,6 +304,17 @@
         </el-row>
         <el-row :gutter="20" v-if="dialogType === 'edit'">
           <el-col :span="24">
+            <el-form-item label="物流状态">
+              <el-select v-model="form.logisticsStatus" style="width: 100%" :disabled="form.status === 'DRAFT' || form.productionProgress !== 'FINISHED'">
+                <el-option label="已出库" value="OUTBOUND" />
+                <el-option label="送货中" value="SHIPPING" />
+                <el-option label="已入库" value="INBOUND" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20" v-if="dialogType === 'edit'">
+          <el-col :span="24">
             <el-form-item label="安装进度">
               <el-select v-model="form.installProgress" style="width: 100%" :disabled="form.status === 'DRAFT'">
                 <el-option label="等待中" value="WAITING" />
@@ -375,7 +394,7 @@ import { assignRemeasureTask } from '../api/remeasure'
 import { listCustomers, getCustomerDetail } from '../api/customer'
 import { useUserStore } from '../stores/user'
 import request from '@/utils/request'
-import { ORDER_STATUS, INSTALL_PROGRESS, PRODUCTION_PROGRESS } from '../utils/constants'
+import { ORDER_STATUS, INSTALL_PROGRESS, PRODUCTION_PROGRESS, LOGISTICS_STATUS } from '../utils/constants'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -401,6 +420,8 @@ const queryForm = reactive({
   customerName: '',
   customerPhone: '',
   brand: '',
+  productionProgress: '',
+  logisticsStatus: '',
   searchSalespersonId: null,
   searchInstallerId: null,
   currentUserId: null,
@@ -810,6 +831,24 @@ const getPaymentStatusLabel = (status) => {
     'PAID': '已付清'
   }
   return map[status] || '未支付'
+}
+
+const getLogisticsStatusType = (status) => {
+    const map = {
+        'OUTBOUND': 'warning',
+        'SHIPPING': 'primary',
+        'INBOUND': 'success'
+    }
+    return map[status] || 'info'
+}
+
+const getLogisticsStatusLabel = (status) => {
+    const map = {
+        'OUTBOUND': '已出库',
+        'SHIPPING': '送货中',
+        'INBOUND': '已入库'
+    }
+    return map[status] || status
 }
 </script>
 

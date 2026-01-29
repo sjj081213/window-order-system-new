@@ -16,6 +16,7 @@ public class OrderListReq extends BasePageReq {
     private String brand;
     private String installProgress;
     private String productionProgress;
+    private String logisticsStatus;
     
     private Long searchSalespersonId;
     private Long searchInstallerId;

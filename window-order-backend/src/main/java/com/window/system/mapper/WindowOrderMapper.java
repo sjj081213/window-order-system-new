@@ -9,8 +9,8 @@ import java.util.List;
 @Mapper
 public interface WindowOrderMapper {
 
-    @Insert("INSERT INTO window_order (order_no, customer_id, customer_name, customer_phone, address, region_codes, province, city, district, detail_address, brand, window_type, color, glass_spec, width, height, price, paid_amount, payment_status, order_time, scheduled_install_date, actual_install_end_date, salesperson_id, installer_id, install_progress, production_progress, status, create_time, create_by, update_by, is_deleted) " +
-            "VALUES (#{orderNo}, #{customerId}, #{customerName}, #{customerPhone}, #{address}, #{regionCodes}, #{province}, #{city}, #{district}, #{detailAddress}, #{brand}, #{windowType}, #{color}, #{glassSpec}, #{width}, #{height}, #{price}, #{paidAmount}, #{paymentStatus}, #{orderTime}, #{scheduledInstallDate}, #{actualInstallEndDate}, #{salespersonId}, #{installerId}, #{installProgress}, #{productionProgress}, #{status}, NOW(), #{createBy}, #{updateBy}, 0)")
+    @Insert("INSERT INTO window_order (order_no, customer_id, customer_name, customer_phone, address, region_codes, province, city, district, detail_address, brand, window_type, color, glass_spec, width, height, price, paid_amount, payment_status, order_time, scheduled_install_date, actual_install_end_date, salesperson_id, installer_id, install_progress, production_progress, logistics_status, status, create_time, create_by, update_by, is_deleted) " +
+            "VALUES (#{orderNo}, #{customerId}, #{customerName}, #{customerPhone}, #{address}, #{regionCodes}, #{province}, #{city}, #{district}, #{detailAddress}, #{brand}, #{windowType}, #{color}, #{glassSpec}, #{width}, #{height}, #{price}, #{paidAmount}, #{paymentStatus}, #{orderTime}, #{scheduledInstallDate}, #{actualInstallEndDate}, #{salespersonId}, #{installerId}, #{installProgress}, #{productionProgress}, #{logisticsStatus}, #{status}, NOW(), #{createBy}, #{updateBy}, 0)")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(WindowOrder order);
 
@@ -87,6 +87,7 @@ public interface WindowOrderMapper {
             "<if test='brand != null and brand != \"\"'> AND o.brand = #{brand}</if> " +
             "<if test='installProgress != null and installProgress != \"\"'> AND o.install_progress = #{installProgress}</if> " +
             "<if test='productionProgress != null and productionProgress != \"\"'> AND o.production_progress = #{productionProgress}</if> " +
+            "<if test='logisticsStatus != null and logisticsStatus != \"\"'> AND o.logistics_status = #{logisticsStatus}</if> " +
             "<if test='searchSalespersonId != null'> AND o.salesperson_id = #{searchSalespersonId}</if> " +
             "<if test='searchInstallerId != null'> AND o.installer_id = #{searchInstallerId}</if> " +
             "<if test='currentUserRole == \"SALES\"'> AND o.salesperson_id = #{currentUserId}</if> " +
@@ -108,6 +109,7 @@ public interface WindowOrderMapper {
             "<if test='brand != null and brand != \"\"'> AND o.brand = #{brand}</if> " +
             "<if test='installProgress != null and installProgress != \"\"'> AND o.install_progress = #{installProgress}</if> " +
             "<if test='productionProgress != null and productionProgress != \"\"'> AND o.production_progress = #{productionProgress}</if> " +
+            "<if test='logisticsStatus != null and logisticsStatus != \"\"'> AND o.logistics_status = #{logisticsStatus}</if> " +
             "<if test='searchSalespersonId != null'> AND o.salesperson_id = #{searchSalespersonId}</if> " +
             "<if test='searchInstallerId != null'> AND o.installer_id = #{searchInstallerId}</if> " +
             "<if test='currentUserRole == \"SALES\"'> AND o.salesperson_id = #{currentUserId}</if> " +

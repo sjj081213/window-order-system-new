@@ -31,6 +31,7 @@ public class OrderUpdateReq {
     private LocalDateTime actualInstallEndDate;
     private String installProgress;
     private String productionProgress;
+    private String logisticsStatus;
     private String status;
     private Long salespersonId;
     private Long installerId;

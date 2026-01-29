@@ -16,6 +16,12 @@ export const PRODUCTION_PROGRESS = {
     FINISHED: 'FINISHED'
 }
 
+export const LOGISTICS_STATUS = {
+    OUTBOUND: 'OUTBOUND',
+    SHIPPING: 'SHIPPING',
+    INBOUND: 'INBOUND'
+}
+
 export const ROLES = {
     ADMIN: 'ADMIN',
     SALES: 'SALES',

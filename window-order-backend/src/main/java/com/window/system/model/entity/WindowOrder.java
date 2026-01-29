@@ -77,8 +77,11 @@ public class WindowOrder {
     @ExcelProperty("安装进度")
     private String installProgress;
     
-    @ExcelProperty("生产进度")
+    @ExcelProperty("制作进度")
     private String productionProgress;
+
+    @ExcelProperty("物流状态")
+    private String logisticsStatus;
     
     @ExcelProperty("状态")
     private String status; // DRAFT, SUBMITTED

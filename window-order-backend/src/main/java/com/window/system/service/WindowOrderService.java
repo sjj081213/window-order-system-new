@@ -114,7 +114,7 @@ public class WindowOrderService {
         } else {
             switch (status) {
                 case "WAITING": return "等待中";
-                case "PRODUCING": return "生产中";
+                case "PRODUCING": return "制作中";
                 case "FINISHED": return "已完成";
                 default: return status;
             }
@@ -168,7 +168,7 @@ public class WindowOrderService {
         if (("INSTALLING".equals(effectiveInstall) || "FINISHED".equals(effectiveInstall)) && 
             !"FINISHED".equals(effectiveProduction)) {
              log.warn("Update failed, invalid progress sequence for order: {}", oldOrder.getOrderNo());
-             return Result.error("生产进度必须为已完成，才能进行安装或完成安装");
+             return Result.error("制作进度必须为已完成，才能进行安装或完成安装");
         }
         return Result.success();
     }
@@ -178,11 +178,11 @@ public class WindowOrderService {
         boolean productionChanged = req.getProductionProgress() != null && !req.getProductionProgress().equals(oldOrder.getProductionProgress());
         
         if (installChanged && productionChanged) {
-             notificationService.notifyAdmins("进度更新提醒", "订单 " + oldOrder.getOrderNo() + " 安装和生产进度均已更新", "success");
+             notificationService.notifyAdmins("进度更新提醒", "订单 " + oldOrder.getOrderNo() + " 安装和制作进度均已更新", "success");
         } else if (installChanged) {
              notificationService.notifyAdmins("安装进度更新", "订单 " + oldOrder.getOrderNo() + " 安装进度更新为: " + getStatusLabel(req.getInstallProgress(), "install"), "success");
         } else if (productionChanged) {
-             notificationService.notifyAdmins("生产进度更新", "订单 " + oldOrder.getOrderNo() + " 生产进度更新为: " + getStatusLabel(req.getProductionProgress(), "production"), "success");
+             notificationService.notifyAdmins("制作进度更新", "订单 " + oldOrder.getOrderNo() + " 制作进度更新为: " + getStatusLabel(req.getProductionProgress(), "production"), "success");
         }
     }
 

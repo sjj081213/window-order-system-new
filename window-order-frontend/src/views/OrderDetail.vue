@@ -99,6 +99,15 @@
           </el-steps>
         </div>
         <div class="progress-wrapper">
+          <div class="progress-label">物流状态</div>
+          <el-steps :active="getLogisticsStep(order.logisticsStatus)" finish-status="success" align-center>
+            <el-step title="待发货" :icon="Timer" />
+            <el-step title="已出库" :icon="Goods" />
+            <el-step title="送货中" :icon="Van" />
+            <el-step title="已入库" :icon="House" />
+          </el-steps>
+        </div>
+        <div class="progress-wrapper">
           <div class="progress-label">安装进度</div>
           <el-steps :active="getInstallStep(order.installProgress)" finish-status="success" align-center>
             <el-step title="等待" :icon="Timer" />
@@ -174,6 +183,13 @@
             <el-option label="已完成" value="FINISHED" />
           </el-select>
         </el-form-item>
+        <el-form-item label="物流状态">
+          <el-select v-model="editForm.logisticsStatus" style="width: 100%" :disabled="editForm.status === 'DRAFT' || editForm.productionProgress !== 'FINISHED'">
+            <el-option label="已出库" value="OUTBOUND" />
+            <el-option label="送货中" value="SHIPPING" />
+            <el-option label="已入库" value="INBOUND" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="安装进度">
           <el-select v-model="editForm.installProgress" style="width: 100%" :disabled="editForm.status === 'DRAFT'">
             <el-option label="等待中" value="WAITING" />
@@ -209,8 +225,9 @@ import request from '@/utils/request'
 import { createAfterSales } from '@/api/afterSales'
 import { updateOrder } from '@/api/order'
 import { ElMessage } from 'element-plus'
-import { Timer, Tools, CircleCheck, Calendar, Van, Money, Wallet } from '@element-plus/icons-vue'
+import { Timer, Tools, CircleCheck, Calendar, Van, Money, Wallet, House, Goods } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
+import { LOGISTICS_STATUS } from '@/utils/constants'
 
 const route = useRoute()
 const router = useRouter()
@@ -399,6 +416,31 @@ const getProductionStep = (status) => {
         'FINISHED': 2
     }
     if (status === 'FINISHED') return 3
+    return map[status] || 0
+}
+
+const getLogisticsStep = (status) => {
+    const map = {
+        'OUTBOUND': 2,
+        'SHIPPING': 3,
+        'INBOUND': 4
+    }
+    // If not in map, return 1 (Waiting) if production finished? 
+    // Or just 0/1 based on logic.
+    // Let's say: 
+    // 0: Initial/Waiting (if production not finished) - Step 1 active? No, Step 0 completed.
+    // ElSteps active is 0-based index of current step.
+    // If active=1, Step 1 is "Processing" (or Finished if finish-status).
+    
+    // If status is empty, return 0 (Step 1 "Waiting" is current).
+    if (!status) return 0 // Step 1 is "Waiting"
+    
+    // If OUTBOUND, Step 1 finished, Step 2 finished. active=2?
+    // Step 1: Waiting. Step 2: Outbound. Step 3: Shipping. Step 4: Inbound.
+    // If status=OUTBOUND, "Outbound" is done. So active=2.
+    // If status=SHIPPING, "Shipping" is done. So active=3.
+    // If status=INBOUND, "Inbound" is done. So active=4.
+    
     return map[status] || 0
 }
 </script>
