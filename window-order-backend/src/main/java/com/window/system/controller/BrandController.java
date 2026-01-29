@@ -7,6 +7,10 @@ import com.window.system.model.req.brand.BrandListReq;
 import com.window.system.model.req.brand.BrandSaveReq;
 import com.window.system.service.BrandService;
 import com.window.system.annotation.Log;
+import com.window.system.service.SysExportTaskService;
+import cn.hutool.json.JSONUtil;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -48,13 +52,13 @@ public class BrandController {
     }
 
     @Autowired
-    private com.window.system.service.SysExportTaskService sysExportTaskService;
+    private SysExportTaskService sysExportTaskService;
 
     @PostMapping("/export")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public Result<String> export(@RequestBody BrandListReq req) {
-        String params = cn.hutool.json.JSONUtil.toJsonStr(req);
-        String timeStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(java.time.LocalDateTime.now());
+        String params = JSONUtil.toJsonStr(req);
+        String timeStr = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
         sysExportTaskService.createTask("导出品牌_" + timeStr + ".xlsx", "BRAND", params);
         
         return Result.success("导出任务已创建，请前往【导出中心】查看进度");

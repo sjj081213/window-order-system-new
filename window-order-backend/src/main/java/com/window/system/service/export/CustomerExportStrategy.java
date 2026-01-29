@@ -8,6 +8,7 @@ import com.window.system.model.entity.SysExportTask;
 import com.window.system.model.req.CustomerListReq;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import cn.hutool.json.JSONUtil;
 
 import java.io.File;
 import java.util.List;
@@ -28,7 +29,7 @@ public class CustomerExportStrategy implements ExportStrategy {
 
     @Override
     public File export(String params, Long taskId) throws Exception {
-        CustomerListReq req = cn.hutool.json.JSONUtil.toBean(params, CustomerListReq.class);
+        CustomerListReq req = JSONUtil.toBean(params, CustomerListReq.class);
         
         SysExportTask task = sysExportTaskMapper.getById(taskId);
         String fileName = task.getTaskName();

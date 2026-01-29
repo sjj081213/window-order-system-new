@@ -8,6 +8,7 @@ import com.window.system.model.entity.SysExportTask;
 import com.window.system.model.req.SalesTargetListReq;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import cn.hutool.json.JSONUtil;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -30,7 +31,7 @@ public class SalesTargetExportStrategy implements ExportStrategy {
 
     @Override
     public File export(String params, Long taskId) throws Exception {
-        SalesTargetListReq req = cn.hutool.json.JSONUtil.toBean(params, SalesTargetListReq.class);
+        SalesTargetListReq req = JSONUtil.toBean(params, SalesTargetListReq.class);
         
         SysExportTask task = sysExportTaskMapper.getById(taskId);
         String fileName = task.getTaskName();

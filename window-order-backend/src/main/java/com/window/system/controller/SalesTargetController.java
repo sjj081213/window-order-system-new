@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 import com.window.system.model.req.SalesTargetListReq;
+import com.window.system.service.SysExportTaskService;
+import cn.hutool.json.JSONUtil;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @RestController
 @RequestMapping("/api/sales-target")
@@ -19,7 +23,7 @@ public class SalesTargetController {
     private SalesTargetService salesTargetService;
     
     @Autowired
-    private com.window.system.service.SysExportTaskService sysExportTaskService;
+    private SysExportTaskService sysExportTaskService;
 
     @PostMapping("/set")
     public Result<String> setTarget(@RequestBody SalesTargetReq req) {
@@ -34,8 +38,8 @@ public class SalesTargetController {
 
     @PostMapping("/export")
     public Result<String> export(@RequestBody SalesTargetListReq req) {
-        String params = cn.hutool.json.JSONUtil.toJsonStr(req);
-        String timeStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(java.time.LocalDateTime.now());
+        String params = JSONUtil.toJsonStr(req);
+        String timeStr = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
         sysExportTaskService.createTask("导出销售目标_" + timeStr + ".xlsx", "SALES_TARGET", params);
         
         return Result.success("导出任务已创建，请前往【导出中心】查看进度");

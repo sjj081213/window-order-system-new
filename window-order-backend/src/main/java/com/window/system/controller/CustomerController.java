@@ -13,6 +13,10 @@ import java.util.Collections;
 import java.util.List;
 
 import com.window.system.model.req.CustomerListReq;
+import com.window.system.service.SysExportTaskService;
+import cn.hutool.json.JSONUtil;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @RestController
 @RequestMapping("/api/customer")
@@ -23,7 +27,7 @@ public class CustomerController {
     private CustomerMapper customerMapper;
 
     @Autowired
-    private com.window.system.service.SysExportTaskService sysExportTaskService;
+    private SysExportTaskService sysExportTaskService;
 
     @GetMapping("/list")
     @Operation(summary = "List customers")
@@ -45,8 +49,8 @@ public class CustomerController {
 
     @PostMapping("/export")
     public Result<String> export(@RequestBody CustomerListReq req) {
-        String params = cn.hutool.json.JSONUtil.toJsonStr(req);
-        String timeStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(java.time.LocalDateTime.now());
+        String params = JSONUtil.toJsonStr(req);
+        String timeStr = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
         sysExportTaskService.createTask("导出客户_" + timeStr + ".xlsx", "CUSTOMER", params);
         
         return Result.success("导出任务已创建，请前往【导出中心】查看进度");

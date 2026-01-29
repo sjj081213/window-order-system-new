@@ -8,6 +8,10 @@ import com.window.system.model.req.AfterSalesListReq;
 import com.window.system.model.req.AfterSalesUpdateReq;
 import com.window.system.security.AuthUser;
 import com.window.system.service.AfterSalesOrderService;
+import com.window.system.service.SysExportTaskService;
+import cn.hutool.json.JSONUtil;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +27,7 @@ public class AfterSalesOrderController {
     private AfterSalesOrderService afterSalesOrderService;
     
     @Autowired
-    private com.window.system.service.SysExportTaskService sysExportTaskService;
+    private SysExportTaskService sysExportTaskService;
 
     @PostMapping("/list")
     @Operation(summary = "List after sales orders")
@@ -38,8 +42,8 @@ public class AfterSalesOrderController {
     public Result<String> export(@RequestBody AfterSalesListReq req, @AuthenticationPrincipal AuthUser user) {
         req.setCurrentUserId(user.getId());
         req.setCurrentUserRole(user.getRole());
-        String params = cn.hutool.json.JSONUtil.toJsonStr(req);
-        String timeStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(java.time.LocalDateTime.now());
+        String params = JSONUtil.toJsonStr(req);
+        String timeStr = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
         sysExportTaskService.createTask("导出售后工单_" + timeStr + ".xlsx", "AFTER_SALES", params);
         
         return Result.success("导出任务已创建，请前往【导出中心】查看进度");

@@ -8,10 +8,17 @@ import com.window.system.model.req.user.UserListReq;
 import com.window.system.model.req.user.UserSaveReq;
 import com.window.system.service.SysUserService;
 import com.window.system.annotation.Log;
+import com.window.system.service.SysExportTaskService;
+import cn.hutool.json.JSONUtil;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Map;
@@ -38,8 +45,8 @@ public class SysUserController {
 
     @GetMapping("/me")
     public Result<Map<String, Object>> me() {
-        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-        Map<String, Object> info = new java.util.HashMap<>();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Map<String, Object> info = new HashMap<>();
         if (auth != null) {
             info.put("principal", auth.getPrincipal());
             info.put("authorities", auth.getAuthorities());
@@ -74,13 +81,13 @@ public class SysUserController {
     }
 
     @Autowired
-    private com.window.system.service.SysExportTaskService sysExportTaskService;
+    private SysExportTaskService sysExportTaskService;
 
     @PostMapping("/export")
     @PreAuthorize("hasAnyRole('ADMIN')")
     public Result<String> export(@RequestBody UserListReq req) {
-        String params = cn.hutool.json.JSONUtil.toJsonStr(req);
-        String timeStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(java.time.LocalDateTime.now());
+        String params = JSONUtil.toJsonStr(req);
+        String timeStr = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
         sysExportTaskService.createTask("导出用户_" + timeStr + ".xlsx", "USER", params);
         
         return Result.success("导出任务已创建，请前往【导出中心】查看进度");

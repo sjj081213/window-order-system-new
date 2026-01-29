@@ -9,6 +9,10 @@ import com.window.system.model.req.RemeasureTaskListReq;
 import com.window.system.model.req.RemeasureTaskSubmitReq;
 import com.window.system.security.AuthUser;
 import com.window.system.service.RemeasureTaskService;
+import com.window.system.service.SysExportTaskService;
+import cn.hutool.json.JSONUtil;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,7 +29,7 @@ public class RemeasureTaskController {
     private RemeasureTaskService remeasureTaskService;
     
     @Autowired
-    private com.window.system.service.SysExportTaskService sysExportTaskService;
+    private SysExportTaskService sysExportTaskService;
 
     @PostMapping("/list")
     @PreAuthorize("hasAnyRole('SALES','ADMIN','INSTALLER')")
@@ -41,8 +45,8 @@ public class RemeasureTaskController {
     public Result<String> export(@RequestBody RemeasureTaskListReq req, @AuthenticationPrincipal AuthUser user) {
         req.setCurrentUserId(user.getId());
         req.setCurrentUserRole(user.getRole());
-        String params = cn.hutool.json.JSONUtil.toJsonStr(req);
-        String timeStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(java.time.LocalDateTime.now());
+        String params = JSONUtil.toJsonStr(req);
+        String timeStr = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
         sysExportTaskService.createTask("导出复尺任务_" + timeStr + ".xlsx", "REMEASURE", params);
         
         return Result.success("导出任务已创建，请前往【导出中心】查看进度");
