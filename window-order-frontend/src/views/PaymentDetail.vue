@@ -10,7 +10,8 @@
     <div class="content">
       <el-card class="box-card" shadow="never">
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="时间" :span="2">{{ payment?.payTime }}</el-descriptions-item>
+          <el-descriptions-item label="时间">{{ payment?.payTime }}</el-descriptions-item>
+          <el-descriptions-item label="添加人">{{ payment?.createByName || '-' }}</el-descriptions-item>
           <el-descriptions-item label="金额">
             <span class="amount">¥ {{ payment?.amount }}</span>
           </el-descriptions-item>
@@ -18,13 +19,21 @@
             <el-tag :type="getPayMethodTagType(payment?.payMethod)">{{ payment?.payMethod }}</el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="备注" :span="2">{{ payment?.remark || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="添加人">{{ payment?.createByName || '-' }}</el-descriptions-item>
           <el-descriptions-item label="附件" :span="2">
             <div v-if="attachments.length" class="attachment-grid">
-              <a v-for="url in attachments" :key="url" :href="url" target="_blank" class="attachment-card">
-                <el-icon><Link /></el-icon>
-                <span class="file-name">{{ fileNameFromUrl(url) }}</span>
-              </a>
+              <div v-for="url in attachments" :key="url" class="attachment-item">
+                <el-image 
+                  v-if="isImage(url)"
+                  :src="url" 
+                  :preview-src-list="[url]"
+                  fit="cover"
+                  class="attachment-image"
+                />
+                <a v-else :href="url" target="_blank" class="attachment-card">
+                  <el-icon><Link /></el-icon>
+                  <span class="file-name">{{ fileNameFromUrl(url) }}</span>
+                </a>
+              </div>
             </div>
             <span v-else class="text-gray">-</span>
           </el-descriptions-item>
@@ -62,6 +71,11 @@ const getPayMethodTagType = (method) => {
     '银行转账': 'info'
   }
   return map[method] || 'info'
+}
+
+const isImage = (url) => {
+  const ext = url.split('.').pop().toLowerCase()
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)
 }
 
 const fileNameFromUrl = (url) => {
@@ -159,6 +173,12 @@ onMounted(async () => {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
+}
+.attachment-image {
+  width: 100%;
+  height: 160px;
+  border-radius: 6px;
+  border: 1px solid #e4e7ed;
 }
 .text-gray {
   color: #909399;

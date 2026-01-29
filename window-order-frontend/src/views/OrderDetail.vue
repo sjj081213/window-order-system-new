@@ -123,7 +123,7 @@
             <span>财务信息</span>
             <div>
                  <el-tag :type="getPaymentStatusType(order.paymentStatus)" class="mr-2">{{ getPaymentStatusLabel(order.paymentStatus) }}</el-tag>
-                 <el-button type="primary" size="small" @click="handlePayment">添加收款</el-button>
+                 <el-button type="primary" size="small" @click="openOrderPayments">查看收款记录</el-button>
             </div>
           </div>
         </template>
@@ -138,100 +138,9 @@
                  <span class="price-text" style="color: #e6a23c">¥ {{ ((order.price || 0) - (order.paidAmount || 0)).toFixed(2) }}</span>
              </el-descriptions-item>
         </el-descriptions>
-        
-        <div class="mt-4 edge-to-edge">
-            <div class="sub-title">收款记录</div>
-            <el-table :data="paymentList" border stripe size="small" class="receipt-table">
-                <el-table-column prop="payTime" label="时间" width="180" header-align="center" label-class-name="text-center" />
-                <el-table-column prop="amount" label="金额" width="140" align="right" header-align="center" label-class-name="text-center">
-                    <template #default="scope"><span class="amount">¥ {{ scope.row.amount }}</span></template>
-                </el-table-column>
-                <el-table-column prop="payMethod" label="支付方式" width="140" header-align="center" label-class-name="text-center">
-                  <template #default="scope">
-                    <el-tag :type="getPayMethodTagType(scope.row.payMethod)" class="method-tag">{{ scope.row.payMethod }}</el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="createByName" label="添加人" width="120" header-align="center" label-class-name="text-center" />
-                <el-table-column label="操作" width="160" fixed="right" header-align="center" align="center" label-class-name="text-center">
-                  <template #default="scope">
-                    <el-button type="primary" link @click="openPaymentDetail(scope.row)">详情</el-button>
-                    <el-divider direction="vertical" />
-                    <el-button type="primary" link @click="openPaymentPage(scope.row)">页面查看</el-button>
-                  </template>
-                </el-table-column>
-            </el-table>
-        </div>
       </el-card>
 
     </div>
-
-    <!-- Payment Dialog -->
-    <el-dialog v-model="paymentDialogVisible" title="添加收款" width="400px">
-        <el-form :model="paymentForm" label-width="80px">
-            <el-form-item label="收款金额">
-                <el-input-number v-model="paymentForm.amount" :min="0" :precision="2" :step="1" style="width: 100%" />
-            </el-form-item>
-            <el-form-item label="支付方式">
-                <el-select v-model="paymentForm.payMethod" style="width: 100%">
-                    <el-option label="微信" value="微信" />
-                    <el-option label="支付宝" value="支付宝" />
-                    <el-option label="现金" value="现金" />
-                    <el-option label="银行转账" value="银行转账" />
-                </el-select>
-            </el-form-item>
-            <el-form-item label="付款凭证">
-                <el-upload
-                  action="/api/file/upload"
-                  :headers="uploadHeaders"
-                  :file-list="uploadFileList"
-                  :on-success="handleUploadSuccess"
-                  :on-remove="handleUploadRemove"
-                  multiple
-                  :limit="10"
-                  accept=".png,.jpg,.jpeg,.gif,.pdf,.doc,.docx,.xls,.xlsx"
-                  list-type="picture-card"
-                >
-                  <el-icon><Plus /></el-icon>
-                </el-upload>
-            </el-form-item>
-            <el-form-item label="备注">
-                <el-input v-model="paymentForm.remark" type="textarea" />
-            </el-form-item>
-        </el-form>
-        <template #footer>
-            <span class="dialog-footer">
-                <el-button @click="paymentDialogVisible = false">取消</el-button>
-                <el-button type="primary" @click="submitPayment">确定</el-button>
-            </span>
-        </template>
-    </el-dialog>
-
-    <el-dialog v-model="paymentDetailVisible" title="收款详情" width="800px">
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="时间" :span="2">{{ selectedPayment?.payTime }}</el-descriptions-item>
-        <el-descriptions-item label="金额">
-          <span class="amount">¥ {{ selectedPayment?.amount }}</span>
-        </el-descriptions-item>
-        <el-descriptions-item label="支付方式">
-          <el-tag :type="getPayMethodTagType(selectedPayment?.payMethod)">{{ selectedPayment?.payMethod }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="备注" :span="2">{{ selectedPayment?.remark || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="添加人">{{ selectedPayment?.createByName || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="附件" :span="2">
-          <div v-if="getAttachments(selectedPayment).length > 0" class="attachment-grid scrollable">
-            <a v-for="url in getAttachments(selectedPayment)" :key="url" :href="url" target="_blank" class="attachment-card">
-              <el-icon><Link /></el-icon>
-              <span class="file-name">{{ fileNameFromUrl(url) }}</span>
-            </a>
-          </div>
-          <span v-else class="text-gray">-</span>
-        </el-descriptions-item>
-      </el-descriptions>
-      <template #footer>
-        <el-button @click="paymentDetailVisible = false">关闭</el-button>
-        <el-button type="primary" @click="openPaymentPage(selectedPayment)">在新页面查看</el-button>
-      </template>
-    </el-dialog>
 
     <!-- After Sales Dialog -->
     <el-dialog v-model="afterSalesDialogVisible" title="申请售后" width="500px">
@@ -297,11 +206,10 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import request from '@/utils/request'
-import { createPayment, listPayments } from '@/api/payment'
 import { createAfterSales } from '@/api/afterSales'
 import { updateOrder } from '@/api/order'
 import { ElMessage } from 'element-plus'
-import { Timer, Tools, CircleCheck, Calendar, Van, Money, Wallet, Plus, Link } from '@element-plus/icons-vue'
+import { Timer, Tools, CircleCheck, Calendar, Van, Money, Wallet } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
 
 const route = useRoute()
@@ -309,22 +217,8 @@ const router = useRouter()
 const userStore = useUserStore()
 const loading = ref(false)
 const order = ref({})
-const paymentList = ref([])
-const paymentDialogVisible = ref(false)
-const paymentDetailVisible = ref(false)
-const selectedPayment = ref(null)
 const afterSalesDialogVisible = ref(false)
 const editDialogVisible = ref(false)
-const paymentForm = ref({
-    amount: 0,
-    payMethod: '微信',
-    remark: '',
-    attachments: []
-})
-const uploadHeaders = ref({
-  Authorization: `Bearer ${localStorage.getItem('token') || ''}`
-})
-const uploadFileList = ref([])
 const editForm = ref({
   id: null,
   status: 'SUBMITTED',
@@ -343,7 +237,6 @@ onMounted(() => {
     const id = route.params.id
     if (id) {
         fetchDetail(id)
-        fetchPayments(id)
     }
 })
 
@@ -363,19 +256,8 @@ const fetchDetail = async (id) => {
     }
 }
 
-const fetchPayments = async (id) => {
-    try {
-        const res = await listPayments(id)
-        if (res.code === 200) {
-            paymentList.value = res.data
-        }
-    } catch(e) {}
-}
-
-const handlePayment = () => {
-    paymentForm.value = { amount: 0, payMethod: '微信', remark: '', attachments: [] }
-    uploadFileList.value = []
-    paymentDialogVisible.value = true
+const openOrderPayments = () => {
+    router.push({ name: 'OrderPayments', params: { id: order.value.id } })
 }
 
 const handleAfterSales = () => {
@@ -402,95 +284,6 @@ const openEdit = () => {
     actualInstallEndDate: order.value.actualInstallEndDate || null
   }
   editDialogVisible.value = true
-}
-
-const submitPayment = async () => {
-    if (paymentForm.value.amount <= 0) {
-        ElMessage.warning('金额必须大于0')
-        return
-    }
-    const price = Number(order.value.price || 0)
-    const paid = Number(order.value.paidAmount || 0)
-    const add = Number(paymentForm.value.amount || 0)
-    if (price > 0 && paid + add > price) {
-        ElMessage.warning('收款总额不能超过订单总额')
-        return
-    }
-    try {
-        const res = await createPayment({
-            orderId: order.value.id,
-            amount: paymentForm.value.amount,
-            payMethod: paymentForm.value.payMethod,
-            remark: paymentForm.value.remark || '',
-            attachments: paymentForm.value.attachments || []
-        })
-        if (res.code === 200) {
-            ElMessage.success('收款成功')
-            paymentDialogVisible.value = false
-            fetchDetail(order.value.id) // refresh order status
-            fetchPayments(order.value.id)
-        } else {
-            ElMessage.error(res.message)
-        }
-    } catch(e) {}
-}
-
-const openPaymentDetail = (row) => {
-  selectedPayment.value = row
-  paymentDetailVisible.value = true
-}
-
-const openPaymentPage = (row) => {
-  if (!row || !order.value?.id) return
-  router.push({ name: 'PaymentDetail', params: { id: row.id }, query: { orderId: order.value.id } })
-}
-
-const handleUploadSuccess = (response, file, fileList) => {
-  if (response && response.code === 200) {
-    const url = response.data
-    paymentForm.value.attachments.push(url)
-    uploadFileList.value = fileList.map(f => ({
-      name: f.name,
-      url: f.response?.data || f.url
-    }))
-  } else {
-    ElMessage.error('上传失败')
-  }
-}
-
-const handleUploadRemove = (file, fileList) => {
-  const url = file.url || (file.response && file.response.data)
-  if (url) {
-    paymentForm.value.attachments = paymentForm.value.attachments.filter(u => u !== url)
-  }
-  uploadFileList.value = fileList.map(f => ({
-    name: f.name,
-    url: f.response?.data || f.url
-  }))
-}
-
-const parseAttachments = (value) => {
-  if (!value) return []
-  return value.split(',').map(s => s.trim()).filter(Boolean)
-}
-
-const getAttachments = (row) => {
-  if (!row) return []
-  if (Array.isArray(row.attachmentList)) return row.attachmentList
-  if (typeof row.attachments === 'string') return parseAttachments(row.attachments)
-  return []
-}
-
-const fileNameFromUrl = (url) => {
-  try {
-    const u = new URL(url, window.location.origin)
-    const pathname = u.pathname || url
-    const name = pathname.split('/').pop() || url
-    return decodeURIComponent(name)
-  } catch {
-    const parts = url.split('?')[0].split('/')
-    return decodeURIComponent(parts.pop() || url)
-  }
 }
 
 const submitAfterSales = async () => {

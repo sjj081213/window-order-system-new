@@ -5,6 +5,7 @@ import OrderList from '../views/OrderList.vue'
 import BrandList from '../views/BrandList.vue'
 import UserList from '../views/UserList.vue'
 import OrderDetail from '../views/OrderDetail.vue'
+import OrderPayments from '../views/OrderPayments.vue'
 import Dashboard from '../views/Dashboard.vue'
 import Logs from '../views/Logs.vue'
 import AfterSalesList from '../views/AfterSalesList.vue'
@@ -40,6 +41,12 @@ const routes = [
         path: 'order/detail/:id',
         name: 'OrderDetail',
         component: OrderDetail,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'order/payments/:id',
+        name: 'OrderPayments',
+        component: OrderPayments,
         meta: { requiresAuth: true }
       },
       {
