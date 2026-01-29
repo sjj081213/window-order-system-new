@@ -1,10 +1,12 @@
 package com.window.system.service;
 
+import cn.hutool.json.JSONUtil;
 import com.window.system.common.Result;
 import com.window.system.config.MinioConfig;
 import com.window.system.mapper.SysExportTaskMapper;
 import com.window.system.mapper.WindowOrderMapper;
 import com.window.system.model.entity.SysExportTask;
+import com.window.system.model.req.OrderListReq;
 import com.window.system.security.AuthUser;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
@@ -84,7 +86,7 @@ public class SysExportTaskService {
             // Handle order export
              this.executeExport(taskId, () -> {
                 try {
-                    com.window.system.model.req.OrderListReq req = cn.hutool.json.JSONUtil.toBean(exportParams, com.window.system.model.req.OrderListReq.class);
+                    OrderListReq req = JSONUtil.toBean(exportParams, com.window.system.model.req.OrderListReq.class);
                     // Use task name as filename if it ends with .xlsx, otherwise append it
                     SysExportTask task = sysExportTaskMapper.getById(taskId);
                     String fileName = task.getTaskName();
@@ -104,23 +106,6 @@ public class SysExportTaskService {
                     return temp;
                 } catch (Exception e) {
                     throw new RuntimeException("Order export failed", e);
-                }
-            });
-        } else if ("TEST".equals(exportType)) {
-             this.executeExport(taskId, () -> {
-                try {
-                    // 模拟耗时操作
-                    Thread.sleep(3000);
-                    File temp = File.createTempFile("test_export_", ".csv");
-                    try (java.io.FileWriter writer = new java.io.FileWriter(temp)) {
-                        writer.write("ID,Name,Time\n");
-                        for (int i = 0; i < 100; i++) {
-                            writer.write(i + ",User " + i + "," + System.currentTimeMillis() + "\n");
-                        }
-                    }
-                    return temp;
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
                 }
             });
         }

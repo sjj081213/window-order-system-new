@@ -25,11 +25,4 @@ public class SysExportTaskController {
     public Result<List<SysExportTask>> list() {
         return sysExportTaskService.list();
     }
-    
-    @PostMapping("/create-test")
-    @Operation(summary = "创建测试导出任务")
-    public Result<String> createTestTask() {
-        sysExportTaskService.createTask("测试导出任务_" + System.currentTimeMillis(), "TEST", null);
-        return Result.success("任务已提交，请在导出中心查看进度");
-    }
 }

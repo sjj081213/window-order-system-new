@@ -2,7 +2,6 @@
   <div class="page-container">
     <div class="header">
       <h2>导出中心</h2>
-      <el-button type="primary" @click="handleTestExport">新建测试导出</el-button>
     </div>
 
     <el-table :data="tasks" v-loading="loading" border style="width: 100%">
@@ -34,7 +33,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { listTasks, createTestTask } from '@/api/exportTask'
+import { listTasks } from '@/api/exportTask'
 import { ElMessage } from 'element-plus'
 
 const tasks = ref([])
@@ -47,16 +46,6 @@ const fetchTasks = async () => {
     if (res && res.code === 200) {
         tasks.value = res.data
     }
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-const handleTestExport = async () => {
-  try {
-    await createTestTask()
-    ElMessage.success('任务已创建')
-    fetchTasks()
   } catch (error) {
     console.error(error)
   }

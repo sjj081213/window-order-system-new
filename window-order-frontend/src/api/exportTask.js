@@ -6,10 +6,3 @@ export function listTasks() {
     method: 'get'
   })
 }
-
-export function createTestTask() {
-  return request({
-    url: '/export-task/create-test',
-    method: 'post'
-  })
-}
