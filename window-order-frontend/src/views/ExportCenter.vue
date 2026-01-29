@@ -45,6 +45,22 @@ const fetchTasks = async () => {
     const res = await listTasks()
     if (res && res.code === 200) {
         tasks.value = res.data
+        
+        // Check if there are any active tasks
+        const hasActiveTasks = tasks.value.some(t => ['PENDING', 'PROCESSING'].includes(t.status))
+        
+        if (hasActiveTasks) {
+            // Start polling if not already started
+            if (!timer) {
+                timer = setInterval(fetchTasks, 3000)
+            }
+        } else {
+            // Stop polling if all tasks are done
+            if (timer) {
+                clearInterval(timer)
+                timer = null
+            }
+        }
     }
   } catch (error) {
     console.error(error)
@@ -77,8 +93,6 @@ const getStatusText = (status) => {
 
 onMounted(() => {
   fetchTasks()
-  // Auto refresh every 5 seconds
-  timer = setInterval(fetchTasks, 5000)
 })
 
 onUnmounted(() => {
