@@ -85,9 +85,22 @@ public class SysExportTaskService {
              this.executeExport(taskId, () -> {
                 try {
                     com.window.system.model.req.OrderListReq req = cn.hutool.json.JSONUtil.toBean(exportParams, com.window.system.model.req.OrderListReq.class);
-                    File temp = File.createTempFile("orders_export_" + taskId + "_", ".xlsx");
+                    // Use task name as filename if it ends with .xlsx, otherwise append it
+                    SysExportTask task = sysExportTaskMapper.getById(taskId);
+                    String fileName = task.getTaskName();
+                    if (!fileName.endsWith(".xlsx")) {
+                        fileName += ".xlsx";
+                    }
+                    
+                    File temp = File.createTempFile("export_", ".xlsx");
                     List<com.window.system.model.entity.WindowOrder> list = windowOrderMapper.exportList(req);
                     com.alibaba.excel.EasyExcel.write(temp, com.window.system.model.entity.WindowOrder.class).sheet("订单").doWrite(list);
+                    
+                    // Rename temp file to match task name for upload
+                    File finalFile = new File(temp.getParent(), fileName);
+                    if (temp.renameTo(finalFile)) {
+                        return finalFile;
+                    }
                     return temp;
                 } catch (Exception e) {
                     throw new RuntimeException("Order export failed", e);

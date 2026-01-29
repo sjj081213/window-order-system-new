@@ -61,8 +61,9 @@ public class DashboardController {
 
     @PostMapping("/export")
     public Result<String> export(@RequestBody OrderListReq req) {
-        String params = JSONUtil.toJsonStr(req);
-        sysExportTaskService.createTask("订单导出_" + System.currentTimeMillis(), "ORDER", params);
+        String params = cn.hutool.json.JSONUtil.toJsonStr(req);
+        String timeStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(java.time.LocalDateTime.now());
+        sysExportTaskService.createTask("导出订单_" + timeStr + ".xlsx", "ORDER", params);
         
         return Result.success("导出任务已创建，请前往【导出中心】查看进度");
     }

@@ -55,7 +55,7 @@ public class WindowOrder {
     @ExcelProperty("已付金额")
     private BigDecimal paidAmount;
 
-    @ExcelProperty("支付状态")
+    @ExcelProperty(value = "支付状态", converter = com.window.system.common.PaymentStatusConverter.class)
     private String paymentStatus;
     
     @ExcelProperty("下单时间")
@@ -74,16 +74,16 @@ public class WindowOrder {
     @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime actualInstallEndDate;
     
-    @ExcelProperty("安装进度")
+    @ExcelProperty(value = "安装进度", converter = com.window.system.common.InstallProgressConverter.class)
     private String installProgress;
     
-    @ExcelProperty("制作进度")
+    @ExcelProperty(value = "制作进度", converter = com.window.system.common.ProductionProgressConverter.class)
     private String productionProgress;
 
-    @ExcelProperty("物流状态")
+    @ExcelProperty(value = "物流状态", converter = com.window.system.common.LogisticsStatusConverter.class)
     private String logisticsStatus;
     
-    @ExcelProperty("状态")
+    @ExcelProperty(value = "状态", converter = com.window.system.common.OrderStatusConverter.class)
     private String status; // DRAFT, SUBMITTED
     
     @ExcelIgnore
