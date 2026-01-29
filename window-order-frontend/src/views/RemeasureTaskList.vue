@@ -9,6 +9,7 @@
           <el-form-item>
             <el-button type="primary" :icon="Search" @click="handleSearch">查询</el-button>
             <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+            <el-button type="warning" :icon="Download" @click="handleExport">导出</el-button>
           </el-form-item>
         </el-form>
       </el-card>
@@ -100,10 +101,13 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { listRemeasureTasks, submitRemeasureTask } from '../api/remeasure'
+import { listRemeasureTasks, submitRemeasureTask, exportRemeasureTasks } from '../api/remeasure'
 import { useUserStore } from '../stores/user'
-import { Refresh, Search } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { Refresh, Search, Download } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -196,6 +200,34 @@ const handleReset = () => {
   orderNo.value = ''
   pageNo.value = 1
   fetchData()
+}
+
+const handleExport = async () => {
+  try {
+    const res = await exportRemeasureTasks({
+      pageNo: pageNo.value,
+      pageSize: pageSize.value,
+      orderNo: orderNo.value,
+      assigneeId: userStore.currentUser.role === 'INSTALLER' ? userStore.currentUser.id : null
+    })
+    if (res.code === 200) {
+      ElMessageBox.confirm(
+        '导出任务已创建，是否前往导出中心查看进度？',
+        '提示',
+        {
+          confirmButtonText: '前往导出中心',
+          cancelButtonText: '留在本页',
+          type: 'success',
+        }
+      )
+      .then(() => {
+        router.push('/export-center')
+      })
+      .catch(() => {})
+    }
+  } catch (error) {
+    console.error(error)
+  }
 }
 </script>
 

@@ -34,4 +34,11 @@ public interface BrandMapper {
     
     @Select("SELECT * FROM brand WHERE (is_deleted = 0 OR is_deleted IS NULL) ORDER BY create_time DESC")
     List<Brand> selectAll();
+
+    @Select("<script>" +
+            "SELECT * FROM brand WHERE (is_deleted = 0 OR is_deleted IS NULL) " +
+            "<if test='name != null and name != \"\"'> AND name LIKE CONCAT('%', #{name}, '%')</if> " +
+            "ORDER BY create_time DESC " +
+            "</script>")
+    List<Brand> exportList(BrandListReq req);
 }

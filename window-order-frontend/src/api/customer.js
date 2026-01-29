@@ -14,3 +14,11 @@ export function getCustomerDetail(id) {
     method: 'get'
   })
 }
+
+export function exportCustomers(data) {
+  return request({
+    url: '/customer/export',
+    method: 'post',
+    data
+  })
+}

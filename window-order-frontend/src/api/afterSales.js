@@ -37,3 +37,11 @@ export function deleteAfterSales(id) {
     method: 'delete'
   })
 }
+
+export function exportAfterSales(data) {
+  return request({
+    url: '/after-sales/export',
+    method: 'post',
+    data
+  })
+}

@@ -21,6 +21,7 @@
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="fetchData" :icon="Search">查询</el-button>
+            <el-button type="warning" @click="handleExport" :icon="Download">导出</el-button>
             <el-button type="success" @click="handleSetTarget" :icon="Plus" v-if="userStore.currentUser.role === 'ADMIN'">设置目标</el-button>
           </el-form-item>
         </el-form>
@@ -97,14 +98,16 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { Search, Plus } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { Search, Plus, Download } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
-import { listTargets, setTarget } from '@/api/salesTarget'
+import { listTargets, setTarget, exportTargets } from '@/api/salesTarget'
 import { useUserStore } from '@/stores/user'
+import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 
 const userStore = useUserStore()
+const router = useRouter()
 const loading = ref(false)
 const tableData = ref([])
 const salesList = ref([])
@@ -150,6 +153,36 @@ const fetchData = async () => {
     }
   } finally {
     loading.value = false
+  }
+}
+
+const handleExport = async () => {
+  try {
+    const params = {
+      month: queryMonth.value,
+      salespersonId: querySalespersonId.value
+    }
+    if (userStore.currentUser.role === 'SALES') {
+        params.salespersonId = userStore.currentUser.id
+    }
+    const res = await exportTargets(params)
+    if (res.code === 200) {
+      ElMessageBox.confirm(
+        '导出任务已创建，是否前往导出中心查看进度？',
+        '提示',
+        {
+          confirmButtonText: '前往导出中心',
+          cancelButtonText: '留在本页',
+          type: 'success',
+        }
+      )
+      .then(() => {
+        router.push('/export-center')
+      })
+      .catch(() => {})
+    }
+  } catch (error) {
+    console.error(error)
   }
 }
 

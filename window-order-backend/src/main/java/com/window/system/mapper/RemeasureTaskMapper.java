@@ -71,4 +71,20 @@ public interface RemeasureTaskMapper {
             "LIMIT #{startIndex}, #{pageSize}" +
             "</script>")
     List<RemeasureTask> selectList(RemeasureTaskListReq req);
+
+    @Select("<script>" +
+            "SELECT t.*, o.order_no, o.customer_name, o.address, s.real_name as assignee_name " +
+            "FROM remeasure_task t " +
+            "LEFT JOIN window_order o ON t.order_id = o.id " +
+            "LEFT JOIN sys_user s ON t.assignee_id = s.id " +
+            "WHERE 1=1 " +
+            "<if test='orderNo != null and orderNo != \"\"'> AND o.order_no LIKE CONCAT('%', #{orderNo}, '%')</if> " +
+            "<if test='orderId != null'> AND t.order_id = #{orderId}</if> " +
+            "<if test='currentUserRole == \"SALES\"'> AND o.salesperson_id = #{currentUserId}</if> " +
+            "<if test='currentUserRole == \"INSTALLER\"'> AND t.assignee_id = #{currentUserId}</if> " +
+            "<if test='assigneeId != null'> AND t.assignee_id = #{assigneeId}</if> " +
+            "<if test='status != null and status != \"\"'> AND t.status = #{status}</if> " +
+            "ORDER BY t.create_time DESC " +
+            "</script>")
+    List<RemeasureTask> exportList(RemeasureTaskListReq req);
 }

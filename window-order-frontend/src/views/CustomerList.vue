@@ -13,6 +13,7 @@
           <el-form-item>
             <el-button type="primary" @click="handleSearch" :icon="Search">查询</el-button>
             <el-button @click="handleReset" :icon="Refresh">重置</el-button>
+            <el-button type="warning" @click="handleExport" :icon="Download">导出</el-button>
           </el-form-item>
         </el-form>
       </el-card>
@@ -55,8 +56,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search, Refresh } from '@element-plus/icons-vue'
-import { listCustomers } from '@/api/customer'
+import { Search, Refresh, Download } from '@element-plus/icons-vue'
+import { listCustomers, exportCustomers } from '@/api/customer'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
 const loading = ref(false)
@@ -96,6 +98,29 @@ const handleReset = () => {
     queryForm.name = ''
     queryForm.phone = ''
     fetchData()
+}
+
+const handleExport = async () => {
+  try {
+    const res = await exportCustomers(queryForm)
+    if (res.code === 200) {
+      ElMessageBox.confirm(
+        '导出任务已创建，是否前往导出中心查看进度？',
+        '提示',
+        {
+          confirmButtonText: '前往导出中心',
+          cancelButtonText: '留在本页',
+          type: 'success',
+        }
+      )
+      .then(() => {
+        router.push('/export-center')
+      })
+      .catch(() => {})
+    }
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const handleDetail = (row) => {

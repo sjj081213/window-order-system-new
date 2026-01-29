@@ -54,4 +54,14 @@ public interface SysUserMapper {
     
     @Select("SELECT * FROM sys_user WHERE (is_deleted = 0 OR is_deleted IS NULL)")
     List<SysUser> selectAll();
+
+    @Select("<script>" +
+            "SELECT u.*, r.role_name as roleName FROM sys_user u " +
+            "LEFT JOIN sys_role r ON u.role = r.role_code " +
+            "WHERE (u.is_deleted = 0 OR u.is_deleted IS NULL) " +
+            "<if test='username != null and username != \"\"'> AND u.username LIKE CONCAT('%', #{username}, '%')</if> " +
+            "<if test='realName != null and realName != \"\"'> AND u.real_name LIKE CONCAT('%', #{realName}, '%')</if> " +
+            "ORDER BY u.create_time DESC " +
+            "</script>")
+    List<SysUser> exportList(UserListReq req);
 }

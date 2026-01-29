@@ -65,6 +65,23 @@ public interface AfterSalesOrderMapper {
             "</script>")
     List<AfterSalesOrder> selectList(AfterSalesListReq req);
     
+    @Select("<script>" +
+            "SELECT aso.*, u.real_name as handler_name, wo.order_no " +
+            "FROM after_sales_order aso " +
+            "LEFT JOIN sys_user u ON aso.handler_id = u.id " +
+            "LEFT JOIN window_order wo ON aso.order_id = wo.id " +
+            "WHERE aso.is_deleted = 0 " +
+            "<if test='orderNo != null and orderNo != \"\"'> AND wo.order_no LIKE CONCAT('%', #{orderNo}, '%')</if> " +
+            "<if test='ticketNo != null and ticketNo != \"\"'> AND aso.ticket_no LIKE CONCAT('%', #{ticketNo}, '%')</if> " +
+            "<if test='customerName != null and customerName != \"\"'> AND aso.customer_name LIKE CONCAT('%', #{customerName}, '%')</if> " +
+            "<if test='customerPhone != null and customerPhone != \"\"'> AND aso.customer_phone LIKE CONCAT('%', #{customerPhone}, '%')</if> " +
+            "<if test='status != null and status != \"\"'> AND aso.status = #{status}</if> " +
+            "<if test='currentUserRole == \"SALES\"'> AND wo.salesperson_id = #{currentUserId}</if> " +
+            "<if test='currentUserRole == \"INSTALLER\"'> AND aso.handler_id = #{currentUserId}</if> " +
+            "ORDER BY aso.create_time DESC " +
+            "</script>")
+    List<AfterSalesOrder> exportList(AfterSalesListReq req);
+    
     @Update("UPDATE after_sales_order SET is_deleted = 1 WHERE id = #{id}")
     int delete(Long id);
 }

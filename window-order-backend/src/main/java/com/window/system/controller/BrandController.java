@@ -46,4 +46,17 @@ public class BrandController {
     public Result<String> delete(@PathVariable Long id) {
         return brandService.delete(id);
     }
+
+    @Autowired
+    private com.window.system.service.SysExportTaskService sysExportTaskService;
+
+    @PostMapping("/export")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public Result<String> export(@RequestBody BrandListReq req) {
+        String params = cn.hutool.json.JSONUtil.toJsonStr(req);
+        String timeStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(java.time.LocalDateTime.now());
+        sysExportTaskService.createTask("导出品牌_" + timeStr + ".xlsx", "BRAND", params);
+        
+        return Result.success("导出任务已创建，请前往【导出中心】查看进度");
+    }
 }

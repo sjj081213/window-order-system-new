@@ -23,6 +23,9 @@ public class RemeasureTaskController {
 
     @Autowired
     private RemeasureTaskService remeasureTaskService;
+    
+    @Autowired
+    private com.window.system.service.SysExportTaskService sysExportTaskService;
 
     @PostMapping("/list")
     @PreAuthorize("hasAnyRole('SALES','ADMIN','INSTALLER')")
@@ -31,6 +34,18 @@ public class RemeasureTaskController {
         req.setCurrentUserId(user.getId());
         req.setCurrentUserRole(user.getRole());
         return remeasureTaskService.list(req);
+    }
+    
+    @PostMapping("/export")
+    @PreAuthorize("hasAnyRole('SALES','ADMIN','INSTALLER')")
+    public Result<String> export(@RequestBody RemeasureTaskListReq req, @AuthenticationPrincipal AuthUser user) {
+        req.setCurrentUserId(user.getId());
+        req.setCurrentUserRole(user.getRole());
+        String params = cn.hutool.json.JSONUtil.toJsonStr(req);
+        String timeStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(java.time.LocalDateTime.now());
+        sysExportTaskService.createTask("导出复尺任务_" + timeStr + ".xlsx", "REMEASURE", params);
+        
+        return Result.success("导出任务已创建，请前往【导出中心】查看进度");
     }
 
     @PostMapping("/assign")

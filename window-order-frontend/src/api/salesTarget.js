@@ -15,3 +15,11 @@ export function listTargets(params) {
     params
   })
 }
+
+export function exportTargets(data) {
+  return request({
+    url: '/sales-target/export',
+    method: 'post',
+    data
+  })
+}

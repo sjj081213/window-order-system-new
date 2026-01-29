@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collections;
 import java.util.List;
 
+import com.window.system.model.req.CustomerListReq;
+
 @RestController
 @RequestMapping("/api/customer")
 @Tag(name = "Customer Management")
@@ -19,6 +21,9 @@ public class CustomerController {
 
     @Autowired
     private CustomerMapper customerMapper;
+
+    @Autowired
+    private com.window.system.service.SysExportTaskService sysExportTaskService;
 
     @GetMapping("/list")
     @Operation(summary = "List customers")
@@ -36,6 +41,15 @@ public class CustomerController {
         int startIndex = (pageNo - 1) * pageSize;
         List<Customer> list = customerMapper.selectList(name, phone, startIndex, pageSize);
         return Result.success(PageResponse.of(list, count));
+    }
+
+    @PostMapping("/export")
+    public Result<String> export(@RequestBody CustomerListReq req) {
+        String params = cn.hutool.json.JSONUtil.toJsonStr(req);
+        String timeStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(java.time.LocalDateTime.now());
+        sysExportTaskService.createTask("导出客户_" + timeStr + ".xlsx", "CUSTOMER", params);
+        
+        return Result.success("导出任务已创建，请前往【导出中心】查看进度");
     }
     
     @GetMapping("/detail/{id}")

@@ -12,6 +12,7 @@
           <el-form-item class="search-actions">
             <el-button type="primary" @click="handleSearch" :icon="Search">查询</el-button>
             <el-button type="success" @click="handleCreate" :icon="Plus">新建账号</el-button>
+            <el-button type="warning" @click="handleExport" :icon="Download">导出</el-button>
           </el-form-item>
         </el-form>
       </el-card>
@@ -89,7 +90,7 @@ import { ref, reactive, onMounted } from 'vue'
 import request from '@/utils/request'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus, Edit, Delete, User, View } from '@element-plus/icons-vue'
+import { Search, Plus, Edit, Delete, User, View, Download } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const currentUser = ref({})
@@ -160,6 +161,29 @@ const fetchData = async () => {
 const handleSearch = () => {
   queryForm.pageNo = 1
   fetchData()
+}
+
+const handleExport = async () => {
+  try {
+    const res = await request.post('/auth/export', queryForm)
+    if (res.code === 200) {
+      ElMessageBox.confirm(
+        '导出任务已创建，是否前往导出中心查看进度？',
+        '提示',
+        {
+          confirmButtonText: '前往导出中心',
+          cancelButtonText: '留在本页',
+          type: 'success',
+        }
+      )
+      .then(() => {
+        router.push('/export-center')
+      })
+      .catch(() => {})
+    }
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const handleCreate = () => {

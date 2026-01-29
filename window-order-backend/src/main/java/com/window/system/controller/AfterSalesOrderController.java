@@ -21,6 +21,9 @@ public class AfterSalesOrderController {
 
     @Autowired
     private AfterSalesOrderService afterSalesOrderService;
+    
+    @Autowired
+    private com.window.system.service.SysExportTaskService sysExportTaskService;
 
     @PostMapping("/list")
     @Operation(summary = "List after sales orders")
@@ -28,6 +31,18 @@ public class AfterSalesOrderController {
         req.setCurrentUserId(user.getId());
         req.setCurrentUserRole(user.getRole());
         return afterSalesOrderService.list(req);
+    }
+    
+    @PostMapping("/export")
+    @Operation(summary = "Export after sales orders")
+    public Result<String> export(@RequestBody AfterSalesListReq req, @AuthenticationPrincipal AuthUser user) {
+        req.setCurrentUserId(user.getId());
+        req.setCurrentUserRole(user.getRole());
+        String params = cn.hutool.json.JSONUtil.toJsonStr(req);
+        String timeStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(java.time.LocalDateTime.now());
+        sysExportTaskService.createTask("导出售后工单_" + timeStr + ".xlsx", "AFTER_SALES", params);
+        
+        return Result.success("导出任务已创建，请前往【导出中心】查看进度");
     }
 
     @PostMapping("/create")

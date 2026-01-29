@@ -25,6 +25,7 @@
           <el-form-item>
             <el-button type="primary" @click="handleSearch" :icon="Search">查询</el-button>
             <el-button @click="handleReset" :icon="Refresh">重置</el-button>
+            <el-button type="warning" @click="handleExport" :icon="Download">导出</el-button>
           </el-form-item>
         </el-form>
       </el-card>
@@ -106,11 +107,14 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { Search, Refresh } from '@element-plus/icons-vue'
-import { listAfterSales, updateAfterSales, deleteAfterSales } from '@/api/afterSales'
+import { Search, Refresh, Download } from '@element-plus/icons-vue'
+import { listAfterSales, updateAfterSales, deleteAfterSales, exportAfterSales } from '@/api/afterSales'
 import { useUserStore } from '@/stores/user'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const userStore = useUserStore()
 const currentUser = userStore.currentUser
@@ -176,6 +180,29 @@ const handleReset = () => {
     queryForm.customerName = ''
     queryForm.status = ''
     fetchData()
+}
+
+const handleExport = async () => {
+  try {
+    const res = await exportAfterSales(queryForm)
+    if (res.code === 200) {
+      ElMessageBox.confirm(
+        '导出任务已创建，是否前往导出中心查看进度？',
+        '提示',
+        {
+          confirmButtonText: '前往导出中心',
+          cancelButtonText: '留在本页',
+          type: 'success',
+        }
+      )
+      .then(() => {
+        router.push('/export-center')
+      })
+      .catch(() => {})
+    }
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const handleEdit = (row) => {

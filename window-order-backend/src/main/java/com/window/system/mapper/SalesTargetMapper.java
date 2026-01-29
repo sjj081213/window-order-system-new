@@ -31,4 +31,16 @@ public interface SalesTargetMapper {
             "ORDER BY t.target_month DESC, actual_amount DESC" +
             "</script>")
     List<SalesTargetResp> list(@Param("month") String month, @Param("salespersonId") Long salespersonId);
+
+    @Select("<script>" +
+            "SELECT t.*, u.real_name as salesperson_name, " +
+            "IFNULL((SELECT SUM(o.price) FROM window_order o WHERE o.salesperson_id = t.salesperson_id AND DATE_FORMAT(o.create_time, '%Y-%m') = t.target_month AND o.is_deleted = 0), 0) as actual_amount " +
+            "FROM sales_target t " +
+            "LEFT JOIN sys_user u ON t.salesperson_id = u.id " +
+            "WHERE 1=1 " +
+            "<if test='month != null and month != \"\"'> AND t.target_month = #{month} </if> " +
+            "<if test='salespersonId != null'> AND t.salesperson_id = #{salespersonId} </if> " +
+            "ORDER BY t.target_month DESC, actual_amount DESC" +
+            "</script>")
+    List<SalesTargetResp> exportList(@Param("month") String month, @Param("salespersonId") Long salespersonId);
 }

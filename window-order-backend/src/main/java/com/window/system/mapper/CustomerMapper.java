@@ -48,4 +48,16 @@ public interface CustomerMapper {
             "<if test='phone != null and phone != \"\"'> AND c.phone LIKE CONCAT('%', #{phone}, '%')</if> " +
             "</script>")
     long countList(@Param("name") String name, @Param("phone") String phone);
+
+    @Select("<script>" +
+            "SELECT c.*, " +
+            "(SELECT COUNT(1) FROM window_order o WHERE o.customer_id = c.id AND o.is_deleted = 0) as order_count, " +
+            "(SELECT IFNULL(SUM(o.price), 0) FROM window_order o WHERE o.customer_id = c.id AND o.is_deleted = 0) as total_spent " +
+            "FROM customer c " +
+            "WHERE c.is_deleted = 0 " +
+            "<if test='name != null and name != \"\"'> AND c.name LIKE CONCAT('%', #{name}, '%')</if> " +
+            "<if test='phone != null and phone != \"\"'> AND c.phone LIKE CONCAT('%', #{phone}, '%')</if> " +
+            "ORDER BY c.create_time DESC " +
+            "</script>")
+    List<Customer> exportList(@Param("name") String name, @Param("phone") String phone);
 }
