@@ -1,4 +1,13 @@
-minio访问地址：http://localhost:9001/browser/s3static
+minio访问地址：http://localhost:9001
+ --console-address "127.0.0.1:9001" --address "127.0.0.1:9000"
+http://localhost:9000/sssjjj/ssjj33.jpg
+
+set MINIO_ROOT_USER=minioadmin
+
+set MINIO_ROOT_PASSWORD=minioadmin
+
+AccessKey: lkANXxJWqWDjNG9nECfG
+SecretKey: 6r9lidmuaHG5kABZe82WWS6S7TwCtMPrCZIKIBYJ
 
 推荐免费高清图库网站（可商用）:
 Unsplash（unsplash.com）

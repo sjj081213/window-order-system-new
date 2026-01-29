@@ -1,6 +1,14 @@
 package com.window.system.controller;
 
 import com.window.system.common.Result;
+import com.window.system.config.MinioConfig;
+import io.minio.GetObjectArgs;
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
+import io.minio.BucketExistsArgs;
+import io.minio.MakeBucketArgs;
+import io.minio.SetBucketPolicyArgs;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -8,10 +16,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -19,57 +24,90 @@ import java.util.UUID;
 @RequestMapping("/api/file")
 public class FileController {
 
+    @Autowired
+    private MinioClient minioClient;
+
+    @Autowired
+    private MinioConfig minioConfig;
+
     @PostMapping("/upload")
-    public Result<String> upload(@RequestParam("file") MultipartFile file) throws IOException {
+    public Result<String> upload(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             return Result.error("文件为空");
         }
-        String original = file.getOriginalFilename();
-        String ext = "";
-        if (original != null && original.contains(".")) {
-            ext = original.substring(original.lastIndexOf("."));
-        } else {
-            String ct = file.getContentType();
-            if (ct != null) {
-                if (ct.startsWith("image/jpeg")) ext = ".jpg";
-                else if (ct.startsWith("image/png")) ext = ".png";
-                else if (ct.startsWith("image/gif")) ext = ".gif";
-                else if (ct.startsWith("application/pdf")) ext = ".pdf";
-                else if (ct.startsWith("application/vnd.ms-excel")) ext = ".xls";
-                else if (ct.startsWith("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) ext = ".xlsx";
-                else if (ct.startsWith("application/msword")) ext = ".doc";
-                else if (ct.startsWith("application/vnd.openxmlformats-officedocument.wordprocessingml.document")) ext = ".docx";
-                else ext = "";
+        try {
+            // Check if bucket exists
+            boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(minioConfig.getBucketName()).build());
+            if (!found) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(minioConfig.getBucketName()).build());
+                // Set public read policy
+                String policy = "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":[\"*\"]},\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::" + minioConfig.getBucketName() + "/*\"]}]}";
+                minioClient.setBucketPolicy(SetBucketPolicyArgs.builder().bucket(minioConfig.getBucketName()).config(policy).build());
             }
+
+            String original = file.getOriginalFilename();
+            String ext = "";
+            if (original != null && original.contains(".")) {
+                ext = original.substring(original.lastIndexOf("."));
+            } else {
+                String ct = file.getContentType();
+                if (ct != null) {
+                    if (ct.startsWith("image/jpeg")) ext = ".jpg";
+                    else if (ct.startsWith("image/png")) ext = ".png";
+                    else if (ct.startsWith("image/gif")) ext = ".gif";
+                    else if (ct.startsWith("application/pdf")) ext = ".pdf";
+                    else if (ct.startsWith("application/vnd.ms-excel")) ext = ".xls";
+                    else if (ct.startsWith("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) ext = ".xlsx";
+                    else if (ct.startsWith("application/msword")) ext = ".doc";
+                    else if (ct.startsWith("application/vnd.openxmlformats-officedocument.wordprocessingml.document")) ext = ".docx";
+                }
+            }
+
+            String dateDir = LocalDate.now().toString();
+            String filename = UUID.randomUUID().toString().replace("-", "") + ext;
+            String objectName = dateDir + "/" + filename;
+
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(minioConfig.getBucketName())
+                            .object(objectName)
+                            .stream(file.getInputStream(), file.getSize(), -1)
+                            .contentType(file.getContentType())
+                            .build());
+
+            String url = minioConfig.getEndpoint() + "/" + minioConfig.getBucketName() + "/" + objectName;
+            return Result.success(url);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("上传失败: " + e.getMessage());
         }
-        String dateDir = LocalDate.now().toString();
-        Path root = Paths.get(System.getProperty("user.dir")).resolve("uploads").resolve(dateDir);
-        Files.createDirectories(root);
-        String filename = UUID.randomUUID().toString().replace("-", "") + ext;
-        Path target = root.resolve(filename);
-        Files.write(target, file.getBytes());
-        String url = "/api/file/" + dateDir + "/" + filename;
-        return Result.success(url);
     }
 
     @GetMapping("/{date}/{filename}")
-    public ResponseEntity<byte[]> get(@PathVariable String date, @PathVariable String filename) throws IOException {
-        Path file = Paths.get(System.getProperty("user.dir")).resolve("uploads").resolve(date).resolve(filename);
-        if (!Files.exists(file)) {
-            return ResponseEntity.notFound().build();
-        }
-        byte[] bytes = Files.readAllBytes(file);
-        String contentType = Files.probeContentType(file);
-        if (!StringUtils.hasText(contentType)) {
+    public ResponseEntity<byte[]> get(@PathVariable String date, @PathVariable String filename) {
+        try {
+            String objectName = date + "/" + filename;
+            InputStream stream = minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(minioConfig.getBucketName())
+                            .object(objectName)
+                            .build());
+            
+            byte[] bytes = stream.readAllBytes();
+            stream.close();
+
+            String contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
             String lower = filename.toLowerCase();
             if (lower.endsWith(".png")) contentType = MediaType.IMAGE_PNG_VALUE;
             else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) contentType = MediaType.IMAGE_JPEG_VALUE;
             else if (lower.endsWith(".gif")) contentType = MediaType.IMAGE_GIF_VALUE;
             else if (lower.endsWith(".pdf")) contentType = MediaType.APPLICATION_PDF_VALUE;
-            else contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, contentType)
+                    .body(bytes);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_TYPE, contentType)
-                .body(bytes);
     }
 }
