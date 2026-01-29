@@ -1,30 +1,20 @@
 package com.window.system.controller;
 
 import cn.hutool.json.JSONUtil;
-import com.alibaba.excel.EasyExcel;
 import com.window.system.common.Result;
-import com.window.system.model.dto.DashboardStats;
-import com.window.system.model.entity.WindowOrder;
 import com.window.system.mapper.WindowOrderMapper;
-import jakarta.servlet.http.HttpServletResponse;
+import com.window.system.model.dto.DashboardStats;
+import com.window.system.model.req.OrderListReq;
+import com.window.system.security.AuthUser;
+import com.window.system.service.SysExportTaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import com.window.system.model.req.OrderListReq;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
-import com.window.system.security.AuthUser;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @RestController
@@ -57,12 +47,12 @@ public class DashboardController {
     }
 
     @Autowired
-    private com.window.system.service.SysExportTaskService sysExportTaskService;
+    private SysExportTaskService sysExportTaskService;
 
     @PostMapping("/export")
     public Result<String> export(@RequestBody OrderListReq req) {
-        String params = cn.hutool.json.JSONUtil.toJsonStr(req);
-        String timeStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(java.time.LocalDateTime.now());
+        String params = JSONUtil.toJsonStr(req);
+        String timeStr = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
         sysExportTaskService.createTask("导出订单_" + timeStr + ".xlsx", "ORDER", params);
         
         return Result.success("导出任务已创建，请前往【导出中心】查看进度");

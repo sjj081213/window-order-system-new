@@ -8,6 +8,7 @@ import com.window.system.model.entity.SysUser;
 import com.window.system.model.req.user.UserListReq;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import cn.hutool.json.JSONUtil;
 
 import java.io.File;
 import java.util.List;
@@ -28,7 +29,7 @@ public class UserExportStrategy implements ExportStrategy {
 
     @Override
     public File export(String params, Long taskId) throws Exception {
-        UserListReq req = cn.hutool.json.JSONUtil.toBean(params, UserListReq.class);
+        UserListReq req = JSONUtil.toBean(params, UserListReq.class);
         
         SysExportTask task = sysExportTaskMapper.getById(taskId);
         String fileName = task.getTaskName();

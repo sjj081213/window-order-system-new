@@ -8,6 +8,7 @@ import com.window.system.model.entity.SysOperationLog;
 import com.window.system.model.req.LogListReq;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import cn.hutool.json.JSONUtil;
 
 import java.io.File;
 import java.util.List;
@@ -28,7 +29,7 @@ public class LogExportStrategy implements ExportStrategy {
 
     @Override
     public File export(String params, Long taskId) throws Exception {
-        LogListReq req = cn.hutool.json.JSONUtil.toBean(params, LogListReq.class);
+        LogListReq req = JSONUtil.toBean(params, LogListReq.class);
         
         SysExportTask task = sysExportTaskMapper.getById(taskId);
         String fileName = task.getTaskName();

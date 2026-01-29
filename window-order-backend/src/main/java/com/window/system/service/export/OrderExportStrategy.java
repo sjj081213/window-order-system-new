@@ -8,6 +8,7 @@ import com.window.system.model.entity.WindowOrder;
 import com.window.system.model.req.OrderListReq;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import cn.hutool.json.JSONUtil;
 
 import java.io.File;
 import java.util.List;
@@ -28,7 +29,7 @@ public class OrderExportStrategy implements ExportStrategy {
 
     @Override
     public File export(String params, Long taskId) throws Exception {
-        OrderListReq req = cn.hutool.json.JSONUtil.toBean(params, OrderListReq.class);
+        OrderListReq req = JSONUtil.toBean(params, OrderListReq.class);
         
         // Determine filename
         SysExportTask task = sysExportTaskMapper.getById(taskId);
