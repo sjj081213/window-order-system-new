@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @MapperScan("com.window.system.mapper")
 public class WindowOrderApplication {
 
+
     public static void main(String[] args) {
         SpringApplication.run(WindowOrderApplication.class, args);
     }
