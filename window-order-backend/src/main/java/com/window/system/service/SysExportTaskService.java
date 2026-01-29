@@ -1,13 +1,11 @@
 package com.window.system.service;
 
-import cn.hutool.json.JSONUtil;
 import com.window.system.common.Result;
 import com.window.system.config.MinioConfig;
 import com.window.system.mapper.SysExportTaskMapper;
-import com.window.system.mapper.WindowOrderMapper;
 import com.window.system.model.entity.SysExportTask;
-import com.window.system.model.req.OrderListReq;
 import com.window.system.security.AuthUser;
+import com.window.system.service.export.ExportStrategyFactory;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +20,6 @@ import java.io.FileInputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 @Service
@@ -39,9 +36,8 @@ public class SysExportTaskService {
     private MinioConfig minioConfig;
 
     @Autowired
-    private WindowOrderMapper windowOrderMapper;
+    private ExportStrategyFactory exportStrategyFactory;
 
-    // Self-injection to allow calling @Async methods from within the same class
     @Autowired
     @Lazy
     private SysExportTaskService self;
@@ -75,15 +71,7 @@ public class SysExportTaskService {
         return task.getId();
     }
 
-    // Deprecated or for backward compatibility
-    public Long createTask(String taskName) {
-        return createTask(taskName, null, null);
-    }
-
-    @Autowired
-    private com.window.system.service.export.ExportStrategyFactory exportStrategyFactory;
-
-    @Async
+    @Async("taskExportExecutor")
     public void executeTask(Long taskId, String exportType, String exportParams) {
         com.window.system.service.export.ExportStrategy strategy = exportStrategyFactory.getStrategy(exportType);
         if (strategy != null) {
@@ -106,7 +94,7 @@ public class SysExportTaskService {
         }
     }
 
-    @Async
+    @Async("taskExportExecutor")
     public void executeExport(Long taskId, Supplier<File> exportLogic) {
         SysExportTask task = new SysExportTask();
         task.setId(taskId);
