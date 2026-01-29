@@ -4,6 +4,9 @@ import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.plugin.*;
+import com.window.system.security.AuthUser;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
@@ -45,15 +48,16 @@ public class AuditInterceptor implements Interceptor {
     }
 
     private Long getCurrentUserId(Object parameter) {
-        // Try to get currentUserId from the parameter object (Req objects usually have it)
+
         try {
-            Field field = parameter.getClass().getDeclaredField("currentUserId");
-            field.setAccessible(true);
-            Object val = field.get(parameter);
-            if (val != null) return (Long) val;
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getPrincipal() instanceof AuthUser) {
+                return ((AuthUser) authentication.getPrincipal()).getId();
+            }
         } catch (Exception e) {
             // ignore
         }
+
         // Fallback or todo: get from ThreadLocal/SecurityContext if implemented
         return 1L; // Default system user for now if missing
     }
