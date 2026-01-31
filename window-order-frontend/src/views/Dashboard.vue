@@ -112,6 +112,37 @@
         </div>
       </div>
 
+      <!-- Admin Stats Section -->
+      <div v-if="isAdmin" class="admin-stats-grid">
+        <div class="admin-stat-card">
+          <div class="stat-content">
+            <div class="stat-value">{{ formatNumber(stats.totalCustomers) }}</div>
+            <div class="stat-label">总客户数</div>
+          </div>
+          <div class="stat-icon blue">
+            <el-icon><UserFilled /></el-icon>
+          </div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="stat-content">
+            <div class="stat-value">{{ formatNumber(stats.totalUsers) }}</div>
+            <div class="stat-label">系统账号</div>
+          </div>
+          <div class="stat-icon purple">
+            <el-icon><Avatar /></el-icon>
+          </div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="stat-content">
+            <div class="stat-value money">{{ formatMoney(stats.todaySales) }}</div>
+            <div class="stat-label">今日销售额</div>
+          </div>
+          <div class="stat-icon orange">
+            <el-icon><TrendCharts /></el-icon>
+          </div>
+        </div>
+      </div>
+
       <!-- Charts Section -->
       <div class="charts-grid">
         <!-- Line Chart -->
@@ -240,7 +271,7 @@ import {
 import {
   Sunny, List, User, Timer, CircleCheckFilled, Money, DataLine,
   ArrowRight, TrendCharts, DataAnalysis, PieChart as PieChartIcon,
-  Trophy, Lightning, DocumentAdd, UserFilled, Aim, Download
+  Trophy, Lightning, DocumentAdd, UserFilled, Aim, Download, Avatar
 } from '@element-plus/icons-vue'
 
 use([
@@ -293,7 +324,10 @@ const stats = ref({
     monthlyPaidAmount: 0,
     orderTrend: [],
     brandDistribution: [],
-    salesPerformance: []
+    salesPerformance: [],
+    totalCustomers: 0,
+    totalUsers: 0,
+    todaySales: 0
 })
 
 const lineOption = ref({})
@@ -480,6 +514,69 @@ onMounted(async () => {
   gap: 24px;
   margin-bottom: 24px;
 }
+
+/* Admin Stats Grid */
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .admin-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-stat-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(148, 163, 184, 0.05);
+  border: 1px solid rgba(241, 245, 249, 1);
+  transition: transform 0.2s;
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(148, 163, 184, 0.1);
+}
+
+.admin-stat-card .stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.admin-stat-card .stat-value.money {
+  font-family: 'Inter', sans-serif;
+  color: #0f172a;
+}
+
+.admin-stat-card .stat-label {
+  color: #64748b;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.admin-stat-card .stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.admin-stat-card .stat-icon.blue { background: #eff6ff; color: #3b82f6; }
+.admin-stat-card .stat-icon.purple { background: #f5f3ff; color: #8b5cf6; }
+.admin-stat-card .stat-icon.orange { background: #fff7ed; color: #f97316; }
 
 .kpi-card {
   background: white;

@@ -22,8 +22,12 @@ public class DashboardStats {
     
     // Sales Performance
     private List<Map<String, Object>> salesPerformance; // name, amount, orderCount
-
-
+    
+    // Admin specific
+    private Long totalCustomers;
+    private Long totalUsers;
+    private String todaySales;
+    
     @Override
     public String toString() {
         return JSONUtil.toJsonStr(this);

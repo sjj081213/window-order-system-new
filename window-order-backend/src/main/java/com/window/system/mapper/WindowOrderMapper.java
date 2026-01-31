@@ -156,6 +156,19 @@ public interface WindowOrderMapper {
             "</script>")
     java.math.BigDecimal sumMonthlyPaidAmount(@Param("userId") Long userId, @Param("role") String role);
     
+    @Select("<script>" +
+            "SELECT IFNULL(SUM(price), 0) FROM window_order WHERE is_deleted = 0 AND DATE_FORMAT(create_time, '%Y%m%d') = DATE_FORMAT(CURDATE(), '%Y%m%d') " +
+            "<if test='role == \"SALES\"'> AND salesperson_id = #{userId} </if> " +
+            "<if test='role == \"INSTALLER\"'> AND installer_id = #{userId} </if> " +
+            "</script>")
+    java.math.BigDecimal sumTodaySales(@Param("userId") Long userId, @Param("role") String role);
+
+    @Select("SELECT count(1) FROM customer WHERE is_deleted = 0")
+    long countTotalCustomers();
+    
+    @Select("SELECT count(1) FROM sys_user WHERE is_deleted = 0")
+    long countTotalUsers();
+
     @Select("SELECT * FROM window_order WHERE is_deleted = 0 ORDER BY create_time DESC")
     List<WindowOrder> selectAll();
     

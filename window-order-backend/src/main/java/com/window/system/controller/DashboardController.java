@@ -42,6 +42,12 @@ public class DashboardController {
         stats.setOrderTrend(windowOrderMapper.getOrderTrend(userId, role));
         stats.setBrandDistribution(windowOrderMapper.getBrandDistribution(userId, role));
         stats.setSalesPerformance(windowOrderMapper.getMonthlySalesPerformance(userId, role));
+        
+        if ("ADMIN".equals(role)) {
+            stats.setTotalCustomers(windowOrderMapper.countTotalCustomers());
+            stats.setTotalUsers(windowOrderMapper.countTotalUsers());
+            stats.setTodaySales(windowOrderMapper.sumTodaySales(null, "ADMIN").toPlainString());
+        }
 
         return Result.success(stats);
     }
