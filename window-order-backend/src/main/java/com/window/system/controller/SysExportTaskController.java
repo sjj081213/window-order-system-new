@@ -20,9 +20,9 @@ public class SysExportTaskController {
     @Autowired
     private SysExportTaskService sysExportTaskService;
 
-    @GetMapping("/list")
+    @PostMapping("/list")
     @Operation(summary = "获取导出任务列表")
-    public Result<List<SysExportTask>> list() {
-        return sysExportTaskService.list();
+    public Result<com.window.system.model.dto.PageResponse<SysExportTask>> list(@RequestBody com.window.system.model.req.ExportTaskListReq req) {
+        return Result.success(sysExportTaskService.list(req));
     }
 }

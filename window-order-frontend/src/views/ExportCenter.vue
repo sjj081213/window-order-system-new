@@ -4,7 +4,30 @@
       <h2>导出中心</h2>
     </div>
 
-    <el-table :data="tasks" v-loading="loading" border style="width: 100%">
+    <el-card shadow="never" class="search-card">
+        <el-form :inline="true" :model="queryForm" class="demo-form-inline">
+            <el-form-item label="操作人">
+                <el-input v-model="queryForm.operatorName" placeholder="输入操作人姓名" clearable />
+            </el-form-item>
+            <el-form-item label="创建时间">
+                <el-date-picker
+                    v-model="dateRange"
+                    type="daterange"
+                    range-separator="至"
+                    start-placeholder="开始日期"
+                    end-placeholder="结束日期"
+                    value-format="YYYY-MM-DD"
+                    @change="handleDateChange"
+                />
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="handleSearch">查询</el-button>
+                <el-button @click="handleReset">重置</el-button>
+            </el-form-item>
+        </el-form>
+    </el-card>
+
+    <el-table :data="tasks" v-loading="loading" border style="width: 100%; margin-top: 20px;">
       <el-table-column prop="taskName" label="任务名称" />
       <el-table-column prop="status" label="状态" width="120">
         <template #default="scope">
@@ -28,23 +51,47 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <div class="pagination-container">
+        <el-pagination
+            v-model:current-page="queryForm.pageNo"
+            v-model:page-size="queryForm.pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+        />
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { listTasks } from '@/api/exportTask'
 import { ElMessage } from 'element-plus'
 
 const tasks = ref([])
+const total = ref(0)
 const loading = ref(false)
+const dateRange = ref([])
 let timer = null
 
+const queryForm = reactive({
+    pageNo: 1,
+    pageSize: 10,
+    operatorName: '',
+    startTime: '',
+    endTime: ''
+})
+
 const fetchTasks = async () => {
+  loading.value = true
   try {
-    const res = await listTasks()
+    const res = await listTasks(queryForm)
     if (res && res.code === 200) {
-        tasks.value = res.data
+        tasks.value = res.data.list
+        total.value = res.data.total
         
         // Check if there are any active tasks
         const hasActiveTasks = tasks.value.some(t => ['PENDING', 'PROCESSING'].includes(t.status))
@@ -64,7 +111,42 @@ const fetchTasks = async () => {
     }
   } catch (error) {
     console.error(error)
+  } finally {
+      loading.value = false
   }
+}
+
+const handleDateChange = (val) => {
+    if (val) {
+        queryForm.startTime = val[0] + ' 00:00:00'
+        queryForm.endTime = val[1] + ' 23:59:59'
+    } else {
+        queryForm.startTime = ''
+        queryForm.endTime = ''
+    }
+}
+
+const handleSearch = () => {
+    queryForm.pageNo = 1
+    fetchTasks()
+}
+
+const handleReset = () => {
+    queryForm.operatorName = ''
+    queryForm.startTime = ''
+    queryForm.endTime = ''
+    dateRange.value = []
+    handleSearch()
+}
+
+const handleSizeChange = (val) => {
+    queryForm.pageSize = val
+    fetchTasks()
+}
+
+const handleCurrentChange = (val) => {
+    queryForm.pageNo = val
+    fetchTasks()
 }
 
 const downloadFile = (url) => {
@@ -112,5 +194,13 @@ onUnmounted(() => {
 }
 .text-danger {
   color: #f56c6c;
+}
+.search-card {
+    margin-bottom: 20px;
+}
+.pagination-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
 }
 </style>

@@ -1,8 +1,9 @@
 import request from '@/utils/request'
 
-export function listTasks() {
+export function listTasks(params) {
   return request({
     url: '/export-task/list',
-    method: 'get'
+    method: 'post',
+    data: params
   })
 }

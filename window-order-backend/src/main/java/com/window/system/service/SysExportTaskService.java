@@ -43,14 +43,18 @@ public class SysExportTaskService {
     @Lazy
     private SysExportTaskService self;
 
-    public Result<List<SysExportTask>> list() {
+    public com.window.system.model.dto.PageResponse<SysExportTask> list(com.window.system.model.req.ExportTaskListReq req) {
         AuthUser user = (AuthUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Long userId = user.getId();
         // If admin, can see all
         if ("ADMIN".equalsIgnoreCase(user.getRole()) || "admin".equalsIgnoreCase(user.getUsername())) {
             userId = null;
         }
-        return Result.success(sysExportTaskMapper.list(userId));
+        
+        long total = sysExportTaskMapper.count(req, userId);
+        List<SysExportTask> list = sysExportTaskMapper.list(req, userId);
+        
+        return com.window.system.model.dto.PageResponse.of(list, total);
     }
 
 

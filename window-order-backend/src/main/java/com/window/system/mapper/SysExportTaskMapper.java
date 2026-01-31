@@ -27,12 +27,27 @@ public interface SysExportTaskMapper {
     SysExportTask getById(Long id);
 
     @Select("<script>" +
+            "SELECT count(1) FROM sys_export_task t " +
+            "LEFT JOIN sys_user u ON t.create_by = u.id " +
+            "WHERE 1=1 " +
+            "<if test='userId != null'> AND t.create_by = #{userId} </if> " +
+            "<if test='req.operatorName != null and req.operatorName != \"\"'> AND u.real_name LIKE CONCAT('%', #{req.operatorName}, '%')</if> " +
+            "<if test='req.startTime != null'> AND t.create_time &gt;= #{req.startTime}</if> " +
+            "<if test='req.endTime != null'> AND t.create_time &lt;= #{req.endTime}</if> " +
+            "</script>")
+    long count(@Param("req") com.window.system.model.req.ExportTaskListReq req, @Param("userId") Long userId);
+
+    @Select("<script>" +
             "SELECT t.*, u.real_name as createByName " +
             "FROM sys_export_task t " +
             "LEFT JOIN sys_user u ON t.create_by = u.id " +
             "WHERE 1=1 " +
             "<if test='userId != null'> AND t.create_by = #{userId} </if> " +
+            "<if test='req.operatorName != null and req.operatorName != \"\"'> AND u.real_name LIKE CONCAT('%', #{req.operatorName}, '%')</if> " +
+            "<if test='req.startTime != null'> AND t.create_time &gt;= #{req.startTime}</if> " +
+            "<if test='req.endTime != null'> AND t.create_time &lt;= #{req.endTime}</if> " +
             "ORDER BY t.create_time DESC " +
+            "LIMIT #{req.startIndex}, #{req.pageSize}" +
             "</script>")
-    List<SysExportTask> list(@Param("userId") Long userId);
+    List<SysExportTask> list(@Param("req") com.window.system.model.req.ExportTaskListReq req, @Param("userId") Long userId);
 }
