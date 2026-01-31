@@ -25,7 +25,7 @@
           <el-icon><List /></el-icon>
           管理订单
         </el-button>
-        <el-button size="large" class="action-btn glass-btn" @click="go('/users')" round>
+        <el-button v-if="isAdmin" size="large" class="action-btn glass-btn" @click="go('/users')" round>
           <el-icon><User /></el-icon>
           账号管理
         </el-button>
@@ -232,7 +232,7 @@
                 <div class="quick-icon-box green">
                    <el-icon><UserFilled /></el-icon>
                 </div>
-                <span>添加客户</span>
+                <span>客户档案</span>
              </div>
              <div class="quick-btn" @click="go('/sales-targets')" v-if="isAdmin">
                 <div class="quick-icon-box purple">
