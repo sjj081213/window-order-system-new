@@ -1,0 +1,39 @@
+server:
+  port: 18080
+
+spring:
+  application:
+    name: window-order-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+      config:
+        server-addr: 127.0.0.1:8848
+        file-extension: yaml
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: auth-service
+          uri: lb://window-order-auth
+          predicates:
+            - Path=/api/auth/**, /api/roles/**, /api/logs/**
+        - id: brand-service
+          uri: lb://window-order-brand
+          predicates:
+            - Path=/api/brand/**
+        - id: customer-service
+          uri: lb://window-order-customer
+          predicates:
+            - Path=/api/customer/**
+        - id: order-service
+          uri: lb://window-order-order
+          predicates:
+            - Path=/api/orders/**, /api/remeasure/**, /api/after-sales/**, /api/sales-target/**, /api/dashboard/**, /api/export-task/**
+        - id: file-service
+          uri: lb://window-order-order
+          predicates:
+            - Path=/api/file/**
