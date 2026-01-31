@@ -25,9 +25,9 @@
           <el-icon><List /></el-icon>
           管理订单
         </el-button>
-        <el-button size="large" class="action-btn glass-btn" @click="go('/customers')" round>
+        <el-button size="large" class="action-btn glass-btn" @click="go('/users')" round>
           <el-icon><User /></el-icon>
-          客户档案
+          账号管理
         </el-button>
       </div>
     </div>
@@ -408,10 +408,11 @@ onMounted(async () => {
 .dashboard-page {
   padding: 24px;
   min-height: 100vh;
-  background-color: #f8fafc;
+  background-color: #f0f2f5;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+    radial-gradient(at 40% 20%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, hsla(189, 100%, 56%, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, hsla(262, 83%, 58%, 0.1) 0px, transparent 50%);
 }
 
 /* Hero Section */
