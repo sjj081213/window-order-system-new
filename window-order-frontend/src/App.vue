@@ -101,8 +101,20 @@ onUnmounted(() => {
 </script>
 
 <style>
+:root {
+  --el-font-size-base: 16px;
+  --el-font-size-small: 14px;
+  --el-font-size-medium: 16px;
+  --el-font-size-large: 18px;
+  --el-font-size-extra-large: 20px;
+}
+
+html {
+  font-size: 16px;
+}
+
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
@@ -113,5 +125,40 @@ onUnmounted(() => {
 body {
   margin: 0;
   padding: 0;
+}
+
+/* Global Table Font Adjustments */
+.el-table {
+  font-size: 15px !important;
+}
+.el-table th {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+/* Form Labels */
+.el-form-item__label {
+  font-size: 15px !important;
+}
+.el-input {
+  font-size: 15px !important;
+}
+.el-button {
+  font-size: 15px !important;
+}
+
+/* Pagination */
+.el-pagination {
+  font-size: 14px !important;
+}
+
+/* Dialog Title */
+.el-dialog__title {
+  font-size: 20px !important;
+}
+
+/* Tag */
+.el-tag {
+  font-size: 13px !important;
 }
 </style>

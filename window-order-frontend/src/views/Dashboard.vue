@@ -442,11 +442,19 @@ onMounted(async () => {
 .dashboard-page {
   padding: 24px;
   min-height: 100vh;
-  background-color: #f0f2f5;
-  background-image: 
-    radial-gradient(at 40% 20%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, hsla(189, 100%, 56%, 0.1) 0px, transparent 50%),
-    radial-gradient(at 0% 50%, hsla(262, 83%, 58%, 0.1) 0px, transparent 50%);
+  /* 使用混合模式叠加图片和渐变 */
+  background: 
+    /* 顶层：微弱的渐变光晕，增加科技感 */
+    radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 40%),
+    /* 中层：白色遮罩，确保内容可读性 */
+    linear-gradient(135deg, rgba(248, 250, 252, 0.95) 0%, rgba(241, 245, 249, 0.85) 100%),
+    /* 底层：高质量建筑/办公背景图 */
+    url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2069');
+  
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
 /* Hero Section */
